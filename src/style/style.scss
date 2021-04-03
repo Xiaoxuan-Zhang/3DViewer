@@ -1,0 +1,79 @@
+$bg-black: #1C304A;
+$bg-black-trasparent: rgba(28, 48, 74, 0.7);
+$font-white: #FFFFFF;
+
+
+html body {
+  font-family: 'Roboto', sans-serif;
+}
+
+#webgl-canvas {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+}
+
+#main-layout {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+}
+
+.side-bar-right {
+  position:absolute;
+  right: 0;
+  top: 0;
+  width: 40%;
+  height: 100%;
+  background-color: $bg-black-trasparent;
+}
+
+.panel-container > button {
+  display: block;
+  width: 100%;
+  min-height: 16px;
+  max-height: 30px;
+  height: 5%;
+  font-weight: 600;
+}
+
+.collapsible {
+  background-color: $bg-black;
+  color: $font-white;
+  cursor: pointer;
+  padding: 8px;
+  width: 100%;
+  border: none;
+  text-align: left;
+  outline: none;
+  font-size: 1rem;
+}
+
+.collapsible:after {
+  content: '\02795'; /* Unicode character for "plus" sign (+) */
+  font-size: 1rem;
+  float: right;
+  margin-left: 5px;
+}
+
+.active:after {
+  content: "\2796"; /* Unicode character for "minus" sign (-) */
+}
+
+.active, .collapsible:hover {
+  background-color: $bg-black;
+}
+
+.panel-content {
+  padding: 0 18px;
+  background-color: white;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.2s ease-out;
+}
