@@ -6,11 +6,16 @@
   "scripts": {
     "start": "webpack serve --config ./webpack.config.js --mode development",
     "dev": "webpack --mode development",
-    "build": "webpack --mode production"
+    "build": "webpack --mode production",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d deploy"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "3D",
+    "WebGL"
+  ],
+  "author": "Xiaoxuan Zhang",
+  "license": "GPL-3.0",
   "devDependencies": {
     "@babel/core": "^7.12.10",
     "@babel/plugin-proposal-class-properties": "^7.12.1",
@@ -36,6 +41,8 @@
     "webpack-dev-server": "^3.11.1",
     "webpack-obj-loader": "^1.0.4"
   },
-  "dependencies": {},
-  "homepage": "."
+  "dependencies": {
+    "gh-pages": "^3.1.0"
+  },
+  "homepage": "https://xiaoxuan-zhang.github.io/3DViewer"
 }

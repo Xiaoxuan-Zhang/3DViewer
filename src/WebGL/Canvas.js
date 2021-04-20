@@ -30,7 +30,7 @@ class Canvas {
     }, false);
   }
 
-  loadDefaultScene = () => {
+  loadDefaultScene() {
     //Create default shader program
     this.shaderProgram = WebGLUtils.createShader(this.gl, Shaders.basicLightVertex, Shaders.basicLightFragment);
 
@@ -42,7 +42,7 @@ class Canvas {
     //Load textures
   }
 
-  loadObj = (filePath) => {
+  loadObj(filePath) {
     // const fileName = filePath.split('/').pop().split("\\").pop();
     // fileLoader(filePath, (text) => {
     //
