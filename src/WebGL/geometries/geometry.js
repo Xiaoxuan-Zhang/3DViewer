@@ -1,4 +1,10 @@
 import Matrix4 from "src/WebGL/lib/cuon-matrix.js";
+import { useShader } from "src/WebGL/lib/webgl-utils.js";
+import {
+  createBufferData,
+  sendAttributeBufferToGLSL,
+  tellGLSLToDrawArrays
+} from "src/WebGL/lib/webglFunctions.js";
 
 /**
  * Base class for a geometric object.
@@ -37,14 +43,17 @@ class Geometry {
 
   addMaterial(materialObj) {
     this.material = materialObj;
-    this.init();
+  }
+
+  useContext(gl) {
+    this.gl = gl;
   }
 
   init() {
-    useShader(gl, this.material.shader);
-    this.bufferDataUpdated['Vertices'] = {buffer: createBufferData(new Float32Array(this.vertices)), dataCount: 3, binded: true};
-    this.bufferDataUpdated['UVs'] = {buffer: createBufferData(new Float32Array(this.UVs)), dataCount: 2, binded: true};
-    this.bufferDataUpdated['Normals'] = {buffer: createBufferData(new Float32Array(this.normals)), dataCount: 3, binded: true};
+    useShader(this.gl, this.material.shader);
+    this.bufferDataUpdated['Vertices'] = {buffer: createBufferData(this.gl, new Float32Array(this.vertices)), dataCount: 3, binded: true};
+    this.bufferDataUpdated['UVs'] = {buffer: createBufferData(this.gl, new Float32Array(this.UVs)), dataCount: 2, binded: true};
+    this.bufferDataUpdated['Normals'] = {buffer: createBufferData(this.gl, new Float32Array(this.normals)), dataCount: 3, binded: true};
   }
   /**
    * Add attributes to this geometry
@@ -58,7 +67,7 @@ class Geometry {
     let attr = {}
     attr.value = value;
     attr.elements = elements;
-    this.attributes.name = attr;
+    this.attributes[name] = attr;
   }
 
   translate(x, y, z) {
@@ -78,26 +87,24 @@ class Geometry {
    * Renders this Geometry within your webGL scene.
    */
   render() {
-    useShader(gl, this.material.shader);
+    useShader(this.gl, this.material.shader);
     /*
      gl.BindVertexArray(this->VAO);
      gl.DrawArrays(GL_TRIANGLES, 0, this->numOfVertices);
      gl.BindVertexArray(0);
     */
     if (this.vertices.length != 0) {
-      sendAttributeBufferToGLSL(this.bufferDataUpdated['Vertices'].buffer, this.bufferDataUpdated['Vertices'].dataCount, "a_position");
+      sendAttributeBufferToGLSL(this.gl, this.bufferDataUpdated['Vertices'].buffer, this.bufferDataUpdated['Vertices'].dataCount, "a_position");
     }
     if (this.normals.length != 0) {
-      sendAttributeBufferToGLSL(this.bufferDataUpdated['Normals'].buffer, this.bufferDataUpdated['Normals'].dataCount, "a_normal");
+      sendAttributeBufferToGLSL(this.gl, this.bufferDataUpdated['Normals'].buffer, this.bufferDataUpdated['Normals'].dataCount, "a_normal");
     }
     if (this.UVs.length != 0) {
-      sendAttributeBufferToGLSL(this.bufferDataUpdated['UVs'].buffer, this.bufferDataUpdated['UVs'].dataCount, "a_texCoord");
+      sendAttributeBufferToGLSL(this.gl, this.bufferDataUpdated['UVs'].buffer, this.bufferDataUpdated['UVs'].dataCount, "a_texCoord");
     }
     this.material.sendUniformToGLSL();
 
-    light.sendUniforms();
-
-    tellGLSLToDrawArrays(this.vertices.length/3);
+    tellGLSLToDrawArrays(this.gl, this.vertices.length/3);
   }
 
   /**

@@ -1,4 +1,6 @@
 import Geometry from 'src/WebGL/geometries/geometry.js';
+import Matrix4, { Vector3 } from 'src/WebGL/lib/cuon-matrix.js';
+import Vertex from "src/WebGL/geometries/vertex.js";
 
 /**
  * Specifies the geometry contained within an OBJ file. A subclass of Geometry.
@@ -12,22 +14,23 @@ class LoadedOBJ extends Geometry {
    * Constructor for LoadedOBJ
    *
    * @constructor
-   * @param {String} objStr An OBJ file in string form
+   * @param {Object} obj An OBJ object
    * @returns {LoadedOBJ} Constructed LoadedOBJ
    */
-  constructor(objStr) {
+  constructor(obj) {
     super();
-
+    this.vertices = [];
+    
     // Construct the Mesh object containg the OBJ file's information
-    var objMesh = new OBJ.Mesh(objStr);
+    let objMesh = obj;
 
     // Construct the necessary amount of vertex objects within this.vertices
-    for (var i = 0; i < objMesh.indices.length; i++) {
+    for (let i = 0; i < objMesh.indices.length; i++) {
       this.vertices[i] = new Vertex();
     }
 
     // Add the vertex points, normals, and uv coordinates in OBJ
-    var transAndScaleVal = this.addVertexPoints(objMesh.indices, objMesh.vertices);
+    let transAndScaleVal = this.addVertexPoints(objMesh.indices, objMesh.vertices);
     this.addVertexNormals(objMesh.indices, objMesh.vertexNormals);
     this.addVertexTextureCoordinates(objMesh.indices, objMesh.textures);
 
@@ -54,13 +57,13 @@ class LoadedOBJ extends Geometry {
     var largestCoordinateValue = 1.0;
     var centerPoint = [0.0, 0.0, 0.0];
 
-    for (var i = 0; i < indices.length; i++) {
+    for (let i = 0; i < indices.length; i++) {
       var index = indices[i];
       var xyz = [points[index * 3], points[index * 3 + 1], points[index * 3 + 2]];
 
       if (vertexHasNotBeenEncountered[index]) {
         // Compare xyz to largestCoordinateValue
-        for (var j = 0; j < 3; j++) {
+        for (let j = 0; j < 3; j++) {
           if (Math.abs(xyz[j]) > largestCoordinateValue) {
             largestCoordinateValue = Math.abs(xyz[j]);
           }
@@ -95,12 +98,12 @@ class LoadedOBJ extends Geometry {
   addVertexNormals(indices, normals) {
     // If normals information is invalid, set all normals to just null
     if (this.isInvalidParameter(normals)) {
-      for (var i = 0; i < indices.length; i++) {
+      for (let i = 0; i < indices.length; i++) {
         this.vertices[i].normal = null;
       }
     }
     else {
-      for (var i = 0; i < indices.length; i++) {
+      for (let i = 0; i < indices.length; i++) {
         var index = indices[i];
         var xyz = [normals[index * 3], normals[index * 3 + 1], normals[index * 3 + 2]];
 
@@ -120,12 +123,12 @@ class LoadedOBJ extends Geometry {
   addVertexTextureCoordinates(indices, textures) {
     // If textures information is invalid, set vertex.uv to null for all vertices.
     if (this.isInvalidParameter(textures)) {
-      for (var i = 0; i < indices.length; i++) {
+      for (let i = 0; i < indices.length; i++) {
         this.vertices[i].uv = null;
       }
     }
     else {
-      for (var i = 0; i < indices.length; i++) {
+      for (let i = 0; i < indices.length; i++) {
         var index = indices[i];
         var uv = [textures[index * 2], textures[index * 2 + 1]];
 

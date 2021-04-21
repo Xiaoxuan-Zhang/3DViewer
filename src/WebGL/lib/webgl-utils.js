@@ -29,7 +29,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
- import * as WebGLDebugUtils from './webgl-debug';
+
 /**
  * @fileoverview This file contains functions every webgl program will need
  * a version of one way or another.
@@ -305,11 +305,6 @@ const getWebGLContext = (canvas, opt_debug = false) => {
   // Get the rendering context for WebGL
   let gl = setupWebGL(canvas);
   if (!gl) return null;
-
-  // if opt_debug is explicitly false, create the context for debugging
-  if (opt_debug) {
-    gl = WebGLDebugUtils.makeDebugContext(gl);
-  }
 
   return gl;
 };

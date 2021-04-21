@@ -1,19 +1,26 @@
 import Canvas from 'src/WebGL/Canvas';
 import UI from 'src/GUI/UI.js';
 import './style/style.scss';
-import { basicLightVertex,basicLightFragment } from 'src/WebGL/shaders';
+import { basicLightVertex, basicLightFragment } from 'src/WebGL/shaders';
 
 const load = () => {
   initLocalData();
   const canvas = new Canvas('webgl-canvas');
+  canvas.init();
   const ui = Object.create(UI);
   ui.init();
+  tick(canvas);
   return true;
 };
 
 const initLocalData = () => {
   localStorage['vertex'] = basicLightVertex;
   localStorage['frag'] = basicLightFragment;
+}
+
+const tick = (canvas) => {
+  canvas.update();
+  requestAnimationFrame( () => tick(canvas));
 }
 
 window.onload = load();

@@ -14,7 +14,7 @@
  */
 var Matrix4 = function(opt_src) {
   var i, s, d;
-  if (opt_src && typeof opt_src === 'object' && opt_src.hasOwnProperty('elements')) {
+  if (opt_src && typeof opt_src === 'object' && Object.prototype.hasOwnProperty.call(opt_src, "elements")) {
     s = opt_src.elements;
     d = new Float32Array(16);
     for (i = 0; i < 16; ++i) {
