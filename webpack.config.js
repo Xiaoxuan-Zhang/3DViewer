@@ -54,10 +54,7 @@ module.exports = {
       },
       {
         test: /\.(?:ico|gif|png|jpe?g)$/i,
-        loader: 'file-loader',
-        options: {
-          name: '[path][name].[ext]'
-        }
+        type: "asset/resource"
       },
       {
         test: /\.obj$/,

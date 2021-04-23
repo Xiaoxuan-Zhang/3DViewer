@@ -5,29 +5,14 @@
  * @this {Scene}
  */
 class Scene {
-    constructor() {
+    constructor(gl) {
+        this.gl = gl;
         this.geometries = []; // Geometries being drawn on canvas
         this.sceneObjects = []; //Objects being added to scene
         this.skybox = null;
         this.final = null;
         this.particleSystem = [];
         this.framebuffer = {};
-    }
-
-    /**
-     * Initialize scene with a WebGL context
-     *
-     * @param {Object} object object being added to scene
-    */
-    init(gl) {
-        this.gl = gl;
-        this.clear();
-        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-        gl.clearColor(0.0, 0.0, 0.0, 1.0);
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        gl.enable(gl.DEPTH_TEST);
-        gl.enable(gl.CULL_FACE);
-        gl.frontFace(gl.CCW);
     }
 
     /**
@@ -53,7 +38,7 @@ class Scene {
     }
 
     /**
-     * Clears all the geometries in the scene.
+     * Clears all geometries in the scene.
      */
     clear() {
         this.geometries = [];
@@ -143,5 +128,6 @@ class Scene {
         // let duration = Math.round(performance.now() - start);
         // g_guiInfo.fps = 1000/duration;
     }
-
 }
+
+export default Scene;

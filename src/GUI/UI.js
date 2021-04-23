@@ -24,8 +24,8 @@ const UIComponent = {
     this.initShaderPanel();
   },
   initShaderPanel: function() {
-    this.vertexShaderEditor = new TextWidget(this.shaderPanel, "vertex-shader-editor", localStorage['vertex']);
-    this.fragShaderEditor = new TextWidget(this.shaderPanel, "frag-shader-editor", localStorage['frag']);
+    this.vertexShaderEditor = new TextWidget(this.shaderPanel, "vertex-shader-editor", sessionStorage['vertex']);
+    this.fragShaderEditor = new TextWidget(this.shaderPanel, "frag-shader-editor", sessionStorage['frag']);
   },
   updateScene: function() {
 

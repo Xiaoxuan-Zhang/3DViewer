@@ -1,3 +1,5 @@
+import Geometry from "src/WebGL/geometries/geometry.js";
+
 /**
  * Specifies a cube. A subclass of Geometry.
  *
@@ -195,3 +197,5 @@ class Cube extends Geometry {
     ];
   }
 }
+
+export default Cube;

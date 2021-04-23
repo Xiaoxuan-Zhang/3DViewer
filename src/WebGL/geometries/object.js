@@ -1,7 +1,9 @@
+import Geometry from "src/WebGL/geometries/geometry.js";
+
 /**
  * Specifies a triangle which fluctuates in size (grows and shrinks).
  *
- * @author "Your Name"
+ * @author "Zooey"
  * @this {CustomObject}
  */
 class CustomObject extends Geometry {
@@ -16,25 +18,26 @@ class CustomObject extends Geometry {
     // information relevant to your animation. For example, to what amount your
     // triangle is currently scaled at.
     super();
+    this.vertices = object.vertices;
+    this.UVs = object.textures;
+    this.normals = object.vertexNormals;
 
-    for (var i = 0; i < object.vertices.length; i++)
-    {
-      for (var j = 0; j < object.vertices[i].points.elements.length; j++)
-      {
-        this.vertices = this.vertices.concat(object.vertices[i].points.elements[j]);
-      }
-      if (object.vertices[i].normal)
-      {
-        for (var j = 0; j < object.vertices[i].normal.elements.length; j++)
-        {
-          this.normals = this.normals.concat(object.vertices[i].normal.elements[j]);
-        }
-      }
-      if (object.vertices[i].uv && object.vertices[i].uv.length > 0)
-      {
-        this.UVs = this.UVs.concat(object.vertices[i].uv);
-      }
-    }
+    // for (let i = 0; i < object.vertices.length; i++) {
+    //   for (let j = 0; j < object.vertices.length; j++) {
+    //     this.vertices.push() = this.vertices.concat(object.vertices[j]);
+    //   }
+    //   if (object.vertexNormals) {
+    //     for (let j = 0; j < object.vertexNormals.length; j++) {
+    //       this.normals = this.normals.concat(object.vertexNormals[j]);
+    //     }
+    //   }
+    //   if (object.textures) {
+    //     for (let j = 0; j < object.textures.length; j++) {
+    //       this.UVs = this.UVs.concat(object.textures[j]);
+    //     }
+    //   }
+    // }
   }
-
 }
+
+export default CustomObject;

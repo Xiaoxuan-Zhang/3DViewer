@@ -1,29 +1,81 @@
-import Canvas from 'src/WebGL/Canvas';
+import WebGLRenderer from 'src/WebGL/renderer.js';
 import UI from 'src/GUI/UI.js';
 import './style/style.scss';
-import { basicLightVertex, basicLightFragment } from 'src/WebGL/shaders';
+import basicLightShader from 'src/WebGL/shaders/basicLight.js';
+import catDiffuse from "src/external/models/Cat-1/Cat_D.png";
+import catNormal from "src/external/models/Cat-1/Cat_N.png";
+import catSpecular from "src/external/models/Cat-1/Cat_S.png";
+import catModel from "src/external/models/Cat-1/Cat.obj";
+
+const imageObjects = [];
+const localShaders = [];
+const localModels = [];
 
 const load = () => {
+  // TODO: add an animated loading indicator
+
+  // Load local resources
   initLocalData();
-  const canvas = new Canvas('webgl-canvas');
-  canvas.init();
-  const ui = Object.create(UI);
-  ui.init();
-  tick(canvas);
+
+  let imageList = [
+    {id: "cat_diffuse", path :catDiffuse},
+    {id: "cat_normal", path: catNormal},
+    {id: "cat_specular", path: catSpecular}
+  ];
+  
+  Promise.all(imageList.map(({id, path}) => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.addEventListener('load', () => resolve({img, id}));
+      img.addEventListener('error', (err) => reject(err));
+      img.src = path;
+    })
+    .then( ({img, id}) => {
+      imageObjects.push({name: id, image: img});
+    })
+  }))
+  .then(() => {
+    render()
+  })
+  .catch( err => {
+    console.log("Error occurred when loading static files: ", err);
+  })
+  
   return true;
 };
 
 const initLocalData = () => {
-  localStorage['vertex'] = basicLightVertex;
-  localStorage['frag'] = basicLightFragment;
+  // Shaders
+  localShaders.push({name: 'BasicLight', vertex: basicLightShader.vertex, fragment: basicLightShader.fragment});
+  sessionStorage['vertex'] = basicLightShader.vertex;
+  sessionStorage['frag'] = basicLightShader.fragment;
+
+  // Models
+  localModels.push({name: "cat", model: catModel});
 }
 
-const tick = (canvas) => {
-  canvas.update();
-  requestAnimationFrame( () => tick(canvas));
+const tick = (renderer) => {
+  renderer.update();
+  requestAnimationFrame( () => tick(renderer));
+}
+
+const render = () => {
+    // Initialize canvas and webgl context
+    const renderer = new WebGLRenderer('webgl-canvas');
+    renderer.loadImages(imageObjects);
+    renderer.loadShaders(localShaders);
+    renderer.loadModels(localModels);
+    renderer.createScene();
+    renderer.createBufferData();
+    // Initialize UI elements
+    const ui = Object.create(UI);
+    ui.init();
+
+    tick(renderer);
 }
 
 window.onload = load();
+
 
 /**
  * Provides requestAnimationFrame in a cross browser

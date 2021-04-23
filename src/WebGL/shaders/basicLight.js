@@ -1,4 +1,4 @@
-const basicLightVertex =
+const vertex =
   `#version 300 es
   precision mediump float;
   uniform mat4 u_model;
@@ -30,7 +30,7 @@ const basicLightVertex =
   }
   `;
 
-const basicLightFragment =
+const fragment =
   `#version 300 es
   precision mediump float;
 
@@ -62,10 +62,10 @@ const basicLightFragment =
     float spec = pow(max(dot(reflectDir, viewDir), 0.0), 64.0);
     vec3 specularColor = u_specularColor * spec * texSpec.r;
     outColor = vec4(ambientColor + diffuseColor + specularColor , 1.0);
-
   }
   `;
-export {
-  basicLightVertex,
-  basicLightFragment
+  
+export default {
+  vertex,
+  fragment
 }

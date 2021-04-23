@@ -8,7 +8,7 @@
  * @param {String} uniformName The name of the uniform variable where the texture's
  * textureUnit location (0 - 7) will reside
  */
-function send2DTextureToGLSL(gl, val, textureUnit, uniformName) {
+export function send2DTextureToGLSL(gl, val, textureUnit, uniformName) {
   // Recomendations: Within this funciton, you should:
   //    1. Gather your uniform location
   //    2. Determine the exture unit you will be using (gl.TEXTURE"N")
@@ -43,7 +43,7 @@ function send2DTextureToGLSL(gl, val, textureUnit, uniformName) {
  * @param {String} uniformName The name of the uniform variable where the texture's
  * textureUnit location (0 - 7) will reside
  */
-function sendCubemapToGLSL(gl, val, textureUnit, uniformName) {
+export function sendCubemapToGLSL(gl, val, textureUnit, uniformName) {
   let loc = gl.getUniformLocation(gl.program, uniformName);
   if (!loc) {
     console.log('Failed to get the storage location of' + uniformName);
@@ -76,7 +76,7 @@ function sendCubemapToGLSL(gl, val, textureUnit, uniformName) {
  * @param callback A callback function which executes with the completed texture
  * object passed as a parameter.
  */
-function create2DTexture(gl, imgPath, magParam, minParam, wrapSParam, wrapTParam, callback) {
+export function create2DTexture(gl, image, magParam, minParam, wrapSParam, wrapTParam) {
   // Recomendations: This function should see you creating an Image object,
   // setting that image object's ".onload" to an anonymous function containing
   // the rest of your code, and setting that image object's ".src" to imgPath.
@@ -90,30 +90,25 @@ function create2DTexture(gl, imgPath, magParam, minParam, wrapSParam, wrapTParam
   //  5. Pass your completed texture object to your callback function
   //
   // NOTE: This function should not return anything.
-  let image = new Image();  // Create the image object
+  
   if (!image) {
     console.log('Failed to create the image object');
-    return false;
+    return null;
   }
-
-  // Register the event handler to be called on loading an image
-  image.onload = function(){
-    let texture = gl.createTexture();   // Create a texture object
-    if (!texture) {
-      console.log('Failed to create the texture object');
-      return false;
-    }
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, minParam);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, magParam);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrapSParam);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrapTParam);
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, image.width, image.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, image);
-    callback(texture);
-  };
-  // Tell the browser to load an image
-  image.src = imgPath;
+  let texture = gl.createTexture();   // Create a texture object
+  if (!texture) {
+    console.log('Failed to create the texture object');
+    return null;
+  }
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, minParam);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, magParam);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrapSParam);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrapTParam);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, image.width, image.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, image);
+  
+  return texture;
 }
 
 /**
@@ -133,7 +128,7 @@ function create2DTexture(gl, imgPath, magParam, minParam, wrapSParam, wrapTParam
  * @param callback A callback function which executes with the completed texture
  * object passed as a parameter.
  */
-function createCubemapTexture(gl, imgPath, imageFormat, magParam, minParam, wrapParam, callback) {
+ export function createCubemapTexture(gl, imgPath, imageFormat, magParam, minParam, wrapParam, callback) {
   var imageList = [
     imgPath + '/right.' + imageFormat,
     imgPath + '/left.' + imageFormat,
@@ -185,7 +180,7 @@ function createCubemapTexture(gl, imgPath, imageFormat, magParam, minParam, wrap
   }
 }
 
-function createNullTexture(gl, width, height, internalFormat, format, border, dataType, magParam, minParam, wrapSParam, wrapTParam) {
+export function createNullTexture(gl, width, height, internalFormat, format, border, dataType, magParam, minParam, wrapSParam, wrapTParam) {
   let texture = gl.createTexture();   // Create a texture object
   if (!texture) {
     console.log('Failed to create the texture object');
@@ -202,13 +197,13 @@ function createNullTexture(gl, width, height, internalFormat, format, border, da
   return texture;
 }
 
-function updateNullTexture(gl, texture, width, height, internalFormat, format, border, dataType, magParam, minParam, wrapSParam, wrapTParam) {
+export function updateNullTexture(gl, texture, width, height, internalFormat, format, border, dataType, magParam, minParam, wrapSParam, wrapTParam) {
   gl.bindTexture(gl.TEXTURE_2D, texture);
   gl.texImage2D(gl.TEXTURE_2D, 0, internalFormat, width, height, 0, format, dataType, null);
   gl.bindTexture(gl.TEXTURE_2D, null);
 }
 
-function createBufferData(gl, data) {
+export function createBufferData(gl, data) {
   let bufferObj = gl.createBuffer();
   if (!bufferObj) {
     console.log('Failed to create the buffer object');
@@ -232,7 +227,7 @@ function createBufferData(gl, data) {
  * @param {Number} stride The offset in bytes between the beginning of consecutive vertex attributes
  * @param {Number} offset An offset in bytes of the first component in the vertex attribute array
  */
-function sendAttributeBufferToGLSL(gl, buffer, dataCount, attribName, dataType = gl.FLOAT, stride = 0, offset = 0) {
+export function sendAttributeBufferToGLSL(gl, buffer, dataCount, attribName, dataType = gl.FLOAT, stride = 0, offset = 0) {
   if (!buffer) {
     console.log('Invalid buffer object!');
     return -1;
@@ -259,7 +254,7 @@ function sendAttributeBufferToGLSL(gl, buffer, dataCount, attribName, dataType =
  * @param gl The WebGl context
  * @param {Uint8Array} indices Data being sent to attribute variable
  */
-function setIndexBuffer(gl, indices) {
+export function setIndexBuffer(gl, indices) {
 // Write the indices to the buffer object
   let indexBuffer = gl.createBuffer();
   if (!indexBuffer) {
@@ -274,7 +269,7 @@ function setIndexBuffer(gl, indices) {
  * @param gl The WebGl context
  * @param {Integer} pointCount The amount of indices being drawn from the buffer.
  */
-function tellGLSLToDrawCurrentBuffer(gl, pointCount) {
+export function tellGLSLToDrawCurrentBuffer(gl, pointCount) {
   // Recommendations: Should only be one line of code.
   gl.drawElements(gl.TRIANGLES, pointCount, gl.UNSIGNED_BYTE, 0);
 }
@@ -284,7 +279,7 @@ function tellGLSLToDrawCurrentBuffer(gl, pointCount) {
  * @param gl The WebGl context
  * @param {Integer} pointCount The amount of vertices being drawn from the buffer.
  */
-function tellGLSLToDrawArrays(gl, pointCount) {
+export function tellGLSLToDrawArrays(gl, pointCount) {
   gl.drawArrays(gl.TRIANGLES, 0, pointCount);
 }
 
@@ -296,7 +291,7 @@ function tellGLSLToDrawArrays(gl, pointCount) {
  * @param {int} val The float value being passed to uniform variable
  * @param {String} uniformName The name of the uniform variable
  */
-function sendUniformUintToGLSL(gl, val, uniformName) {
+export function sendUniformUintToGLSL(gl, val, uniformName) {
   let val_loc = gl.getUniformLocation(gl.program, uniformName);
   if (val_loc < 0) {
     console.log('Failed to get the storage location of ' + uniformName);
@@ -313,7 +308,7 @@ function sendUniformUintToGLSL(gl, val, uniformName) {
  * @param {float} val The float value being passed to uniform variable
  * @param {String} uniformName The name of the uniform variable
  */
-function sendUniformFloatToGLSL(gl, val, uniformName) {
+export function sendUniformFloatToGLSL(gl, val, uniformName) {
   let val_loc = gl.getUniformLocation(gl.program, uniformName);
   if (val_loc < 0) {
     console.log('Failed to get the storage location of ' + uniformName);
@@ -330,7 +325,7 @@ function sendUniformFloatToGLSL(gl, val, uniformName) {
  * @param {Array} val Array (vector) being passed to uniform variable
  * @param {String} uniformName The name of the uniform variable
  */
-function sendUniformVec4ToGLSL(gl, val, uniformName) {
+export function sendUniformVec4ToGLSL(gl, val, uniformName) {
   let val_loc = gl.getUniformLocation(gl.program, uniformName);
   if (val_loc < 0) {
     console.log('Failed to get the storage location of ' + uniformName);
@@ -347,7 +342,7 @@ function sendUniformVec4ToGLSL(gl, val, uniformName) {
  * @param {Array} val Array (vector) being passed to uniform variable
  * @param {String} uniformName The name of the uniform variable
  */
-function sendUniformVec3ToGLSL(gl, val, uniformName) {
+export function sendUniformVec3ToGLSL(gl, val, uniformName) {
   let val_loc = gl.getUniformLocation(gl.program, uniformName);
   if (val_loc < 0) {
     console.log('Failed to get the storage location of ' + uniformName);
@@ -364,7 +359,7 @@ function sendUniformVec3ToGLSL(gl, val, uniformName) {
  * @param {Array} val Array (vector) being passed to uniform variable
  * @param {String} uniformName The name of the uniform variable
  */
-function sendUniformVec2ToGLSL(gl, val, uniformName) {
+export function sendUniformVec2ToGLSL(gl, val, uniformName) {
   let val_loc = gl.getUniformLocation(gl.program, uniformName);
   if (val_loc < 0) {
     console.log('Failed to get the storage location of ' + uniformName);
@@ -381,7 +376,7 @@ function sendUniformVec2ToGLSL(gl, val, uniformName) {
  * @param {Array} val Value being sent to uniform variable
  * @param {String} uniformName Name of the uniform variable recieving data
  */
- function sendUniformMat4ToGLSL(gl, val, uniformName) {
+export function sendUniformMat4ToGLSL(gl, val, uniformName) {
    let val_loc = gl.getUniformLocation(gl.program, uniformName);
    if (val_loc < 0) {
      console.log('Failed to get the storage location of ' + uniformName);

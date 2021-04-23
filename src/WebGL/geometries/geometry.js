@@ -1,10 +1,4 @@
 import Matrix4 from "src/WebGL/lib/cuon-matrix.js";
-import { useShader } from "src/WebGL/lib/webgl-utils.js";
-import {
-  createBufferData,
-  sendAttributeBufferToGLSL,
-  tellGLSLToDrawArrays
-} from "src/WebGL/lib/webglFunctions.js";
 
 /**
  * Base class for a geometric object.
@@ -18,14 +12,14 @@ class Geometry {
    *
    * @constructor
    */
-  constructor(material=null) {
+  constructor() {
     this.vertices = []; // an array of vertices with coordinates of x,y,z
     this.normals = []; //the corresponding normals to each vertex
     this.UVs = []; //the corresponding UV to each vertex
     this.indices = [];
     this.modelMatrix = new Matrix4(); // Model matrix applied to geometric object
     this.normalMatrix = new Matrix4();
-    this.bufferDataUpdated = {};
+    this.buffer = {};
     this.attributes = {}; // List of attributes that might be including color, position...
     this.translateValue = [0.0, 0.0, 0.0];
     this.scaleValue = [1.0, 1.0, 1.0];
@@ -34,27 +28,19 @@ class Geometry {
     this.autoRotate = false;
     this.angle = 0.0;
     this.visible = true;
-
+    this.material = null;
+    
     this.now = performance.now();
-    if (material != null) {
-      this.addMaterial(material)
-    }
   }
 
   addMaterial(materialObj) {
     this.material = materialObj;
   }
 
-  useContext(gl) {
-    this.gl = gl;
+  setBuffer(name, buffer, dataCount) {
+    this.buffer[name] = {buffer: buffer, dataCount: dataCount, binded: true};
   }
 
-  init() {
-    useShader(this.gl, this.material.shader);
-    this.bufferDataUpdated['Vertices'] = {buffer: createBufferData(this.gl, new Float32Array(this.vertices)), dataCount: 3, binded: true};
-    this.bufferDataUpdated['UVs'] = {buffer: createBufferData(this.gl, new Float32Array(this.UVs)), dataCount: 2, binded: true};
-    this.bufferDataUpdated['Normals'] = {buffer: createBufferData(this.gl, new Float32Array(this.normals)), dataCount: 3, binded: true};
-  }
   /**
    * Add attributes to this geometry
    *
@@ -75,58 +61,16 @@ class Geometry {
     this.translateValue[1] = y;
     this.translateValue[2] = z;
   }
+
   scale(scale) {
     this.scaleValue = scale;
   }
+
   rotate(degree, axis) {
     this.rotation = degree;
     this.rotationAxis = axis;
   }
 
-  /**
-   * Renders this Geometry within your webGL scene.
-   */
-  render() {
-    useShader(this.gl, this.material.shader);
-    /*
-     gl.BindVertexArray(this->VAO);
-     gl.DrawArrays(GL_TRIANGLES, 0, this->numOfVertices);
-     gl.BindVertexArray(0);
-    */
-    if (this.vertices.length != 0) {
-      sendAttributeBufferToGLSL(this.gl, this.bufferDataUpdated['Vertices'].buffer, this.bufferDataUpdated['Vertices'].dataCount, "a_position");
-    }
-    if (this.normals.length != 0) {
-      sendAttributeBufferToGLSL(this.gl, this.bufferDataUpdated['Normals'].buffer, this.bufferDataUpdated['Normals'].dataCount, "a_normal");
-    }
-    if (this.UVs.length != 0) {
-      sendAttributeBufferToGLSL(this.gl, this.bufferDataUpdated['UVs'].buffer, this.bufferDataUpdated['UVs'].dataCount, "a_texCoord");
-    }
-    this.material.sendUniformToGLSL();
-
-    tellGLSLToDrawArrays(this.gl, this.vertices.length/3);
-  }
-
-  /**
-   * Responsible for updating the geometry's modelMatrix for animation.
-   * Does nothing for non-animating geometry.
-   */
-  updateAnimation() {
-    this.modelMatrix.setTranslate(this.translateValue[0], this.translateValue[1], this.translateValue[2]);
-    this.modelMatrix.scale(this.scaleValue[0], this.scaleValue[1], this.scaleValue[2]);
-
-    if (this.autoRotate) {
-      var elapsed = performance.now() - this.now;
-      this.now = performance.now();
-      this.angle += (10 * elapsed) / 1000.0;
-      this.angle %= 360;
-      this.modelMatrix.rotate(this.angle, 0, 1, 1);
-    } else {
-      this.modelMatrix.rotate(this.rotation, this.rotationAxis[0], this.rotationAxis[1], this.rotationAxis[2]);
-    }
-    this.normalMatrix.setInverseOf(this.modelMatrix);
-    this.normalMatrix.transpose();
-  }
 }
 
 export default Geometry;
