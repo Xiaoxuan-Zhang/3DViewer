@@ -1,3 +1,5 @@
+import Geometry from "src/WebGL/geometries/geometry.js";
+
 /**
  * Specifies a Square. A subclass of Geometry.
  *
@@ -44,3 +46,5 @@ class Square extends Geometry {
   }
 
 }
+
+export default Square;

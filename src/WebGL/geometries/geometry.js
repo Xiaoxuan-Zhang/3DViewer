@@ -71,6 +71,27 @@ class Geometry {
     this.rotationAxis = axis;
   }
 
+  /**
+   * Responsible for updating the geometry's modelMatrix for animation.
+   * Does nothing for non-animating geometry.
+   */
+   updateAnimation() {
+    this.modelMatrix.setTranslate(this.translateValue[0], this.translateValue[1], this.translateValue[2]);
+    this.modelMatrix.scale(this.scaleValue[0], this.scaleValue[1], this.scaleValue[2]);
+
+    if (this.autoRotate) {
+      var elapsed = performance.now() - this.now;
+      this.now = performance.now();
+      this.angle += (10 * elapsed) / 1000.0;
+      this.angle %= 360;
+      this.modelMatrix.rotate(this.angle, 0, 1, 1);
+    } else {
+      this.modelMatrix.rotate(this.rotation, this.rotationAxis[0], this.rotationAxis[1], this.rotationAxis[2]);
+    }
+    this.normalMatrix.setInverseOf(this.modelMatrix);
+    this.normalMatrix.transpose();
+  }
+
 }
 
 export default Geometry;

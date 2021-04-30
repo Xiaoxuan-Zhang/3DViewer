@@ -75,59 +75,6 @@ class Scene {
         }
     }
 
-    /**
-     * Renders all the Geometry within the scene.
-     */
-    render() {
-        //let start = performance.now();
-        const gl = this.gl;
-        //first pass : render to framebuffer
-        if (this.final != null) {
-            gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer['first']);
-        } else {
-            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        }
-
-        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-        gl.frontFace(gl.CW);
-        
-        this.sceneObjects.forEach(function(object) {
-            object.render();
-        });
-        gl.frontFace(gl.CCW);
-
-        this.geometries.forEach(function(geometry){
-            if (geometry.visible) {
-            geometry.render();
-            }
-        });
-        gl.flush();
-
-        if (this.skybox != null) {
-            gl.disable(gl.CULL_FACE);
-            gl.depthFunc(gl.LEQUAL);
-            this.skybox.render();
-            gl.depthFunc(gl.LESS);
-            gl.enable(gl.CULL_FACE);
-        }
-
-        for (var i = 0; i < this.particleSystem.length; ++i) {
-            this.particleSystem[i].render();
-        }
-
-        //Second pass : render to scene
-        if (this.final != null) {
-            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-            gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-            this.final.render();
-        }
-
-        // let duration = Math.round(performance.now() - start);
-        // g_guiInfo.fps = 1000/duration;
-    }
 }
 
 export default Scene;

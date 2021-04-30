@@ -11,14 +11,14 @@ import {
  * @this {Camera}
  */
 var Camera = function() {
-  this.position = new Float32Array([0.0, 10.0, 10.0]);
+  this.position = new Float32Array([0.0, 0.0, 10.0]);
   this.target = new Float32Array([0.0, 0.0, 0.0]);
   this.worldUp = new Float32Array([0, 1, 0]);
   this.up = new Float32Array([0, 1, 0]);
   this.front = new Float32Array([0, 0, -1]);
   this.right = new Float32Array([0, 0, 0]);
   this.yaw = -90.0;
-  this.pitch = 3.0;
+  this.pitch = 0.0;
   this.fov = 60.0;
   this.near = 0.1;
   this.far = 1000.0;
@@ -40,6 +40,7 @@ var Camera = function() {
 **/
 Camera.prototype.setPosition = function(position) {
   this.position = new Float32Array(position);
+  this.updateViewMatrix();
 }
 
 /**
@@ -47,6 +48,7 @@ Camera.prototype.setPosition = function(position) {
 **/
 Camera.prototype.setTarget = function(target) {
   this.target = new Float32Array(target);
+  this.updateViewMatrix();
 }
 
 /**
@@ -57,6 +59,7 @@ Camera.prototype.setPerspective = function(fov, aspectRatio, near, far) {
   this.near = near;
   this.far = far;
   this.aspectRatio = aspectRatio;
+  this.updateProjectionMatrix();
 }
 
 /**

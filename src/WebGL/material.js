@@ -1,14 +1,3 @@
-import {
-  sendUniformMat4ToGLSL,
-  sendUniformVec3ToGLSL,
-  sendUniformFloatToGLSL,
-  sendUniformUintToGLSL,
-  send2DTextureToGLSL,
-  sendCubemapToGLSL,
-  sendUniformVec2ToGLSL,
-  sendUniformVec4ToGLSL
-} from "src/WebGL/lib/webglFunctions.js";
-
 /**
  * Specifies a material object.
  *
@@ -21,11 +10,16 @@ class Material {
    *
    * @constructor
    */
-  constructor(uniforms=null, shaderProgram=null) {
+  constructor({uniforms=null, shaders=null}) {
     this.uniforms = uniforms;
-    this.shaderProgram = shaderProgram;
+    this.shaderProgram = null;
+    this.shaders = shaders;
     this.textureUnit = {}; //keep track of texture unit
     this.textureUnitCount = 0;
+  }
+
+  setProgram(program) {
+    this.shaderProgram = program;
   }
   
   getTextureUnit(name) {

@@ -4,6 +4,7 @@ import Scene from "src/WebGL/scene.js";
 import Camera from "src/WebGL/camera.js";
 import Material from "src/WebGL/material.js";
 import Cube from "src/WebGL/geometries/cube.js";
+import Square from "src/WebGL/geometries/square.js";
 import CustomObject from "src/WebGL/geometries/object.js";
 
 /**
@@ -20,8 +21,15 @@ class Renderer {
     this.shaderProgram = {};
     this.models = {};
     this.framebuffer = {};
-    this.textureObj = {}
     this.scene = null;
+    this.camera = null;
+    this.frameBufferTexture = {};
+    this.secondPass = false;
+    this.final = null;
+    this.fogNear = 0.1,
+    this.fogFar = 1000.0;
+    this.fogAmount = 1.0;
+    this.fogColor = [255, 255, 255];
 
     this.domElement = document.getElementById(divId);
     if (!this.domElement) {
@@ -35,100 +43,53 @@ class Renderer {
       return false;
     }
 
-    this._initContext();
-
-    this._initFramebuffers();
-    
     window.addEventListener("resize", () => {
-      this.resizeCanvas(this.gl);
+      this.resizeCanvas();
     }, false);
+
+    document.addEventListener('keydown', (ev) => {
+      if (this.camera) {
+        if(ev.key == 'w') {
+          this.camera.move("forward");
+        } else if (ev.key == 's') {
+          this.camera.move("backward");
+        } else if (ev.key == 'a') {
+          this.camera.move("right");
+        } else if (ev.key == 'd'){
+          this.camera.move("left");
+        } else if (ev.key == 'i'){
+          this.camera.rotate("up");
+        } else if (ev.key == 'k'){
+          this.camera.rotate("down");
+        } else if (ev.key == 'j'){
+          this.camera.rotate("left");
+        } else if (ev.key == 'l'){
+          this.camera.rotate("right");
+        } else { return; } // Prevent the unnecessary drawing
+      }
+    });
+  }
+
+  init(scene, camera) {
+    this.scene = scene;
+    this.camera = camera;
+    this._initContext();
+    this._initFramebuffers();
+    this._createTextures();
+    this._compileShaders();
+    this._createBufferData();
+
+    this.resizeCanvas();
   }
   
   _initContext() {
     const gl = this.gl;
-    console.log(gl.canvas.width, gl.canvas.height);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    gl.clearColor(0.0, 0.5, 0.5, 1.0);
+    gl.clearColor(0.5, 0.5, 0.5, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.enable(gl.DEPTH_TEST);
     gl.enable(gl.CULL_FACE);
     gl.frontFace(gl.CCW);
-  }
-
-  createScene() {
-    this.scene = new Scene();
-    this.camera = new Camera();
-    console.log(this.models['cat']);
-    const geo = new CustomObject(this.models['cat']);
-    const uniforms = {
-      u_model: {type: "mat4", value: geo.modelMatrix},
-      u_view: {type: "mat4", value: this.camera.viewMatrix},
-      u_projection: {type: "mat4", value: this.camera.projectionMatrix},
-      u_normalMatrix: {type: "mat4", value: geo.normalMatrix},
-      u_cameraPos: {type: 'v3', value: this.camera.position},
-      u_sample: {type: "texture", value: this.textureObj["cat_diffuse"]},
-      u_specular: {type: "texture", value: this.textureObj["cat_specular"]},
-      u_normal: {type: "texture", value: this.textureObj["cat_normal"]},
-    };
-    const material = new Material(uniforms, this.shaderProgram['BasicLight']);
-    geo.addMaterial(material);
-    geo.translate(0.0, 5.0, -10.0);
-    geo.scale([3.0, 3.0, 3.0]);
-    this.scene.addGeometry(geo);
-  }
-  
-  /**
-   * Load shader from local files
-   *
-   * @public
-   * @param {Array} shaders An array of shaders: {name, vertex, fragment}
-   */
-  loadShaders(shaders) {
-    shaders.forEach( ({name, vertex, fragment}) => {
-      this._createShaderProgram(name, vertex, fragment);
-    })
-  }
-
-  /**
-   * Load images from local files
-   *
-   * @public
-   * @param {Array} images An array of images: {name, imageObj}
-   */
-   loadImages(images) {
-     images.forEach( ({name, image}) => {
-      this.textureObj[name] = WebGLFunc.create2DTexture(this.gl, image, this.gl.LINEAR, this.gl.LINEAR, this.gl.REPEAT, this.gl.REPEAT);
-     })
-  }
-
-  /**
-   * Load 3D models from local files
-   *
-   * @public
-   * @param {Array} models An array of models: {name, model}
-   */
-  loadModels(models) {
-    models.forEach( ({name, model}) => {
-      this.models[name] = model;
-    })
-  }
-
-  /**
-   * create shader program
-   *
-   * @public
-   * @param {String} programName name of a shader program
-   * @param {String} vertexShader text data of vertex shader
-   * @param {String} fragShader text data of fragment shader
-   */
-  _createShaderProgram(programName, vertexShader, fragShader) {
-    let program = WebGLUtils.createShader(this.gl, vertexShader, fragShader);
-    if (!program)
-    {
-      console.log('Failed to create shaders');
-      return;
-    }
-    this.shaderProgram[programName] = program;
   }
 
   _initFramebuffers() {
@@ -142,8 +103,8 @@ class Renderer {
     let depthTexture = WebGLFunc.createNullTexture(gl, gl.canvas.width, gl.canvas.height, gl.DEPTH_COMPONENT24, gl.DEPTH_COMPONENT, 0, gl.UNSIGNED_INT, gl.NEAREST, gl.NEAREST, gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE);
     
     // Save to resources
-    this.textureObj['framebuffer_color'] = colorTexture;
-    this.textureObj['framebuffer_depth'] = depthTexture;
+    this.frameBufferTexture['color'] = colorTexture;
+    this.frameBufferTexture['depth'] = depthTexture;
 
     // set the texture as the first color attachment
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, colorTexture, 0);
@@ -154,7 +115,17 @@ class Renderer {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   }
 
-  resizeCanvas(gl) {
+  _updateRenderTexture() {
+    const gl = this.gl;
+    if (this.frameBufferTexture) {
+      Object.keys(this.frameBufferTexture).forEach( key => {
+        WebGLFunc.updateNullTexture(gl, this.frameBufferTexture[key], gl.canvas.width, gl.canvas.height, gl.RGBA, gl.RGBA, 0, gl.UNSIGNED_BYTE, gl.NEAREST, gl.NEAREST, gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE);
+      })
+    }
+  }
+
+  resizeCanvas() {
+    const gl = this.gl;
     let realToCSSPixels = window.devicePixelRatio;
     // Lookup the size the browser is displaying the canvas in CSS pixels
     // and compute a size needed to make our drawingbuffer match it in
@@ -171,15 +142,65 @@ class Renderer {
       gl.canvas.height = displayHeight;
     }
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    if (this.camera) {
+      this.camera.updateProjectionMatrix();
+    }
+    this._updateRenderTexture();
   }
 
-  createBufferData() {
+  _createBufferData() {
     this.scene.geometries.forEach( geometry => {
       WebGLUtils.useShader(this.gl, geometry.material.shaderProgram);
       geometry.setBuffer('Vertices', WebGLFunc.createBufferData(this.gl, new Float32Array(geometry.vertices)), 3);
       geometry.setBuffer('UVs', WebGLFunc.createBufferData(this.gl, new Float32Array(geometry.UVs)), 2);
       geometry.setBuffer('Normals', WebGLFunc.createBufferData(this.gl, new Float32Array(geometry.normals)), 3);
     });
+  }
+  
+  _compileShaders() {
+    this.scene.geometries.forEach( geo => {
+      const { vertex, fragment } = geo.material.shaders;
+      geo.material.shaderProgram = WebGLUtils.createShader(this.gl, vertex, fragment);
+    });
+  }
+
+  _createTextures() {
+    this.scene.geometries.forEach( geo => {
+      const uniforms = geo.material.uniforms;
+      for (let key in uniforms) {
+        const {type, value} = uniforms[key];
+        if (type === "texture" && value && typeof value === "object") {
+          const {image, properties: {minParam, magParam, wrapSParam, wrapTParam}} = value;
+          value["textureObj"] = WebGLFunc.create2DTexture(this.gl, image, this.gl[minParam], this.gl[magParam], this.gl[wrapSParam], this.gl[wrapTParam]);
+        }
+      }
+    });
+  }
+  
+  setSecondPass(enabled) {
+    this.secondPass = enabled;
+  }
+
+  setFog(near, far, fogAmount, fogColor) {
+    this.fogNear = near,
+    this.fogFar = far;
+    this.fogAmount = fogAmount;
+    this.fogColor = fogColor;
+  }
+
+  createFinalSquad() {
+    let geo = new Square();
+    let uniforms = {
+      u_near: {type: "f", value: this.fogNear},
+      u_far: {type: "f", value: this.fogFar},
+      u_fog: {type: "f", value: this.fogAmount},
+      u_fogColor: {type: "v3", value: this.fogColor},
+      u_sample: {type: "texture", value: this.frameBufferTexture['color']},
+      u_depth: {type: "texture", value: this.frameBufferTexture['depth']},
+    };
+    let material = new Material(uniforms, this.shaderProgram["Final"]);
+    geo.addMaterial(material);
+    this.final = geo;
   }
 
   _sendMaterialUniforms(materialObj) {
@@ -200,7 +221,7 @@ class Renderer {
       } else if (type == "int") {
         WebGLFunc.sendUniformUintToGLSL(this.gl, value, name);
       } else if (type == "texture") {
-        WebGLFunc.send2DTextureToGLSL(this.gl, value, materialObj.getTextureUnit(name), name);
+        WebGLFunc.send2DTextureToGLSL(this.gl, value["textureObj"], materialObj.getTextureUnit(name), name);
       } else if (type == "cubemap") {
         WebGLFunc.sendCubemapToGLSL(this.gl, value, materialObj.getTextureUnit(name), name);
       } else if (type == "v2") {
@@ -215,8 +236,8 @@ class Renderer {
     }
   }
 
-  _sendCameraUniforms(cameraObj) {
-    const { viewMatrix, projectionMatrix, position } = cameraObj;
+  _sendCameraUniforms() {
+    const { viewMatrix, projectionMatrix, position } = this.camera;
     WebGLFunc.sendUniformMat4ToGLSL(this.gl, viewMatrix, "u_view");
     WebGLFunc.sendUniformMat4ToGLSL(this.gl, projectionMatrix, "u_projection");
     WebGLFunc.sendUniformVec3ToGLSL(this.gl, position, "u_cameraPos");
@@ -236,38 +257,45 @@ class Renderer {
       WebGLFunc.sendAttributeBufferToGLSL(this.gl, buffer['UVs'].buffer, buffer['UVs'].dataCount, "a_texCoord");
     }
     this._sendMaterialUniforms(material);
-    this._sendCameraUniforms(this.camera);
+    this._sendCameraUniforms();
 
     WebGLFunc.tellGLSLToDrawArrays(this.gl, vertices.length/3);
   }
 
-  _updateAnimation(renderObj) {
-    let { modelMatrix, translateValue, scaleValue, autoRotate, rotation, angle, rotationAxis, normalMatrix } = renderObj;
-    modelMatrix.setTranslate(translateValue[0], translateValue[1], translateValue[2]);
-    modelMatrix.scale(scaleValue[0], scaleValue[1], scaleValue[2]);
+  render() {
+    // Update animations
+    this.scene.updateAnimation();
 
-    if (autoRotate) {
-      var elapsed = performance.now() - this.now;
-      this.now = performance.now();
-      angle += (10 * elapsed) / 1000.0;
-      angle %= 360;
-      modelMatrix.rotate(angle, 0, 1, 1);
+    const gl = this.gl;
+    //first pass : render to framebuffer
+    if (this.final != null) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer['first']);
     } else {
-      modelMatrix.rotate(rotation, rotationAxis[0], rotationAxis[1], rotationAxis[2]);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     }
-    normalMatrix.setInverseOf(modelMatrix);
-    normalMatrix.transpose();
-  }
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    
+    this.scene.geometries.forEach( geo => {
+      this._renderObject(geo);
+    })
+    gl.flush();
+    
+    if (this.scene.skybox) {
+      gl.disable(gl.CULL_FACE);
+      gl.depthFunc(gl.LEQUAL);
+      this._renderObject(this.scene.skybox);
+      gl.depthFunc(gl.LESS);
+      gl.enable(gl.CULL_FACE);
+    }
 
-  /**
-   * Update canvas in animation cycle
-   */
-  update() {
-    // Could be optimized
-    this.scene.geometries.forEach( geometry => {
-      this._updateAnimation(geometry);
-      this._renderObject(geometry);
-    });
+    //Second pass : render to scene
+    if (this.final != null) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        this._renderObject(this.final);
+    }
   }
 
 }

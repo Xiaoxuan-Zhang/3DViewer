@@ -1,9 +1,14 @@
-function Sidebar(parentElement, id) {
-  const sidebar = document.createElement("div");
-  sidebar.id = id;
-  sidebar.className = "side-bar-right";
-  parentElement.appendChild(sidebar);
-  return sidebar;
+import UIComponent from "src/GUI/Components/UIComponent.js";
+
+class Sidebar extends UIComponent {
+  constructor(id) {
+    super();
+    const element = document.createElement("div");
+    element.id = id;
+    element.className = "side-bar-right";
+    this.element = element;
+  }
+  
 }
 
 export default Sidebar;
