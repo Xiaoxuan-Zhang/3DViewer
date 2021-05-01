@@ -9,10 +9,9 @@ class Scene {
         this.gl = gl;
         this.geometries = []; // Geometries being drawn on canvas
         this.sceneObjects = []; //Objects being added to scene
+        this.light = null;
         this.skybox = null;
-        this.final = null;
         this.particleSystem = [];
-        this.framebuffer = {};
     }
 
     /**
@@ -37,6 +36,10 @@ class Scene {
         this.particleSystem.push(particles);
     }
 
+    setLight(light) {
+        this.light = light;
+    }
+
     /**
      * Clears all geometries in the scene.
      */
@@ -44,9 +47,8 @@ class Scene {
         this.geometries = [];
         this.sceneObjects = [];
         this.skybox = null;
-        this.final = null;
         this.particleSystem = [];
-        this.framebuffer = null;
+        this.light = null;
     }
 
     /**
@@ -62,7 +64,7 @@ class Scene {
 
         this.geometries.forEach(function(geometry){
             if (geometry.visible) {
-            geometry.updateAnimation();
+                geometry.updateAnimation();
             }
         });
 
@@ -70,9 +72,6 @@ class Scene {
             this.skybox.updateAnimation();
         }
 
-        if (this.final) {
-            this.final.updateAnimation();
-        }
     }
 
 }

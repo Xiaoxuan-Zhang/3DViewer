@@ -2,6 +2,9 @@ import WebGLRenderer from 'src/WebGL/renderer.js';
 import UI from 'src/GUI/UI.js';
 import './style/style.scss';
 import basicLightShader from 'src/WebGL/shaders/basicLight.js';
+import skyShader from 'src/WebGL/shaders/sky.js';
+import simpleShader from "src/WebGL/shaders/simpleColor.js";
+import noise64 from "src/external/textures/noise64.png";
 import catDiffuse from "src/external/models/Cat-1/Cat_D.png";
 import catNormal from "src/external/models/Cat-1/Cat_N.png";
 import catSpecular from "src/external/models/Cat-1/Cat_S.png";
@@ -9,12 +12,14 @@ import catModel from "src/external/models/Cat-1/Cat.obj";
 import Scene from "src/WebGL/scene.js";
 import Camera from "src/WebGL/camera.js";
 import Material from "src/WebGL/material.js";
+import SimpleLight from "src/WebGL/simpleLight.js";
 import Cube from "src/WebGL/geometries/cube.js";
+import Square from "src/WebGL/geometries/square.js";
+import CustomObject from "src/WebGL/geometries/object.js";
 import Texture from "src/WebGL/texture.js";
 
 const imageObjects = {};
 const localShaders = [];
-const localModels = [];
 const CANVAS_ID = "webgl-canvas";
 
 const load = () => {
@@ -26,7 +31,8 @@ const load = () => {
   let imageList = [
     {id: "cat_diffuse", path :catDiffuse},
     {id: "cat_normal", path: catNormal},
-    {id: "cat_specular", path: catSpecular}
+    {id: "cat_specular", path: catSpecular},
+    {id: "noise64", path: noise64}
   ];
   
   Promise.all(imageList.map(({id, path}) => {
@@ -53,9 +59,6 @@ const load = () => {
 const initLocalData = () => {
   // Shaders
   localShaders.push({name: 'BasicLight', vertex: basicLightShader.vertex, fragment: basicLightShader.fragment});
-
-  // Models
-  localModels.push({name: "cat", model: catModel});
 }
 
 const render = () => {
@@ -69,14 +72,10 @@ const render = () => {
     ui.init();
     
     ui.addListener( () => {
-      localShaders.forEach( shaderInfo => {
-        if (shaderInfo.name === "BasicLight") {
-          shaderInfo.fragment = sessionStorage["textarea-BasicLight"];
-        }
-      });
-      renderer.loadShaders(localShaders);
+      if (sessionStorage && "textarea-BasicLight" in sessionStorage) {
+        basicLightShader.fragment = sessionStorage["textarea-BasicLight"];
+      }
       renderer.init(scene, camera);
-
     });
     ui.bindEvents();
     const animate = () => {
@@ -92,6 +91,54 @@ const createScene = () => {
   camera.setPerspective(40.0, 2, 0.1, 100);
   camera.setPosition([0.0, 0.0, 1.0]);
   
+  //  Add some 3D stuff
+  const cube = createCube({
+    translate: [-2.0, -1.0, -10.0],
+    scale: [0.5, 0.5, 0.5],
+    rotateDegree: 30,
+    rotateAxis: [0, 1, 1],
+    autoRotate: true
+  });
+  scene.addGeometry(cube);
+
+  const cube1 = createCube({
+    translate: [2.0, -1.0, -10.0],
+    scale: [0.5, 0.5, 0.5],
+    rotateDegree: 30,
+    rotateAxis: [1, 1, 0],
+    autoRotate: true
+  });
+  scene.addGeometry(cube1);
+  
+  const ground = createGround({
+    translate: [0.0, -3.0, -10.0],
+    scale: [100.0, 100.0, 100.0],
+    rotateDegree: -90,
+    rotateAxis: [1, 0, 0]
+  });
+  scene.addGeometry(ground);
+
+  const cat = createObject({
+    translate: [0.0, -1.0, -5.0]
+  });
+  scene.addGeometry(cat);
+
+  //Add a skybox
+  const skybox = createSkybox();
+  scene.skybox = skybox;
+
+  const light = new SimpleLight({});
+  scene.setLight(light);
+  return { scene, camera };
+}
+
+const createCube = ({
+  translate=[0.0, 0.0, 0.0], 
+  scale=[1.0, 1.0, 1.0], 
+  rotateDegree=0.0, 
+  rotateAxis=[0,1,0], 
+  autoRotate=false
+}) => {
   const geo = new Cube();
   const uniforms = {
     u_model: {type: "mat4", value: geo.modelMatrix},
@@ -100,18 +147,73 @@ const createScene = () => {
     u_specular: {type: "texture", value: new Texture(imageObjects["cat_specular"])},
     u_normal: {type: "texture", value: new Texture(imageObjects["cat_normal"])},
   };
-  const shaders = {
-    vertex: basicLightShader.vertex,
-    fragment: basicLightShader.fragment
+  
+  const material = new Material({uniforms, shaders: basicLightShader});
+  geo.addMaterial(material);
+  geo.translate(translate);
+  geo.rotate(rotateDegree, rotateAxis);
+  geo.scale(scale);
+  geo.autoRotate = autoRotate;
+  return geo;
+}
+
+const createGround = ({
+  translate=[0.0, 0.0, 0.0], 
+  scale=[1.0, 1.0, 1.0], 
+  rotateDegree=0.0, 
+  rotateAxis=[0,1,0], 
+  autoRotate=false
+}) => {
+  const geo = new Square();
+  
+  const uniforms = {
+    u_model: {type: "mat4", value: geo.modelMatrix},
+    u_normalMatrix: {type: "mat4", value: geo.normalMatrix},
+    u_color: {type: "v3", value: [0.5, 0.3, 0.3]}
   };
   
-  const material = new Material({uniforms, shaders});
+  const material = new Material({uniforms, shaders: simpleShader});
   geo.addMaterial(material);
-  geo.translate(0.0, 0.0, -10.0);
-  geo.rotate(30, [1, 1, 0]);
-  geo.scale([1.0, 1.0, 1.0]);
-  scene.addGeometry(geo);
-  return {scene, camera};
+  geo.translate(translate);
+  geo.rotate(rotateDegree, rotateAxis);
+  geo.scale(scale);
+  geo.autoRotate = autoRotate;
+  return geo;
+}
+
+const createSkybox = () => {
+  const geo = new Square();
+  const uniforms = {
+    u_noisemap: {type: "texture", value: new Texture(imageObjects["noise64"])},
+    u_time: {type: "t", value: 0.0}
+  };
+  const material = new Material({uniforms, shaders: skyShader});
+  geo.addMaterial(material);
+  return geo;
+}
+
+const createObject = ({
+  translate=[0.0, 0.0, 0.0], 
+  scale=[1.0, 1.0, 1.0], 
+  rotateDegree=0.0, 
+  rotateAxis=[0,1,0], 
+  autoRotate=false
+}) => {
+  const geo = new CustomObject(catModel);
+  const uniforms = {
+    u_model: {type: "mat4", value: geo.modelMatrix},
+    u_normalMatrix: {type: "mat4", value: geo.normalMatrix},
+    u_sample: {type: "texture", value: new Texture(imageObjects["cat_diffuse"])},
+    u_specular: {type: "texture", value: new Texture(imageObjects["cat_specular"])},
+    u_normal: {type: "texture", value: new Texture(imageObjects["cat_normal"])},
+  };
+  const material = new Material({uniforms, shaders: basicLightShader});
+  geo.addMaterial(material);
+  geo.translate(translate);
+  geo.rotate(rotateDegree, rotateAxis);
+  geo.scale(scale);
+  geo.autoRotate = autoRotate;
+  return geo;
 }
 
 window.onload = load();

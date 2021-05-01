@@ -21,6 +21,7 @@ class CustomObject extends Geometry {
     this.vertices = object.vertices;
     this.UVs = object.textures;
     this.normals = object.vertexNormals;
+    this.indices = object.indices;
 
     // for (let i = 0; i < object.vertices.length; i++) {
     //   for (let j = 0; j < object.vertices.length; j++) {

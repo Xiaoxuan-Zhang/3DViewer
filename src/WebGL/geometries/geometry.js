@@ -56,10 +56,8 @@ class Geometry {
     this.attributes[name] = attr;
   }
 
-  translate(x, y, z) {
-    this.translateValue[0] = x;
-    this.translateValue[1] = y;
-    this.translateValue[2] = z;
+  translate(coords) {
+    this.translateValue = coords;
   }
 
   scale(scale) {
@@ -84,7 +82,7 @@ class Geometry {
       this.now = performance.now();
       this.angle += (10 * elapsed) / 1000.0;
       this.angle %= 360;
-      this.modelMatrix.rotate(this.angle, 0, 1, 1);
+      this.modelMatrix.rotate(this.angle, this.rotationAxis[0], this.rotationAxis[1], this.rotationAxis[2]);
     } else {
       this.modelMatrix.rotate(this.rotation, this.rotationAxis[0], this.rotationAxis[1], this.rotationAxis[2]);
     }

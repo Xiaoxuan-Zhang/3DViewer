@@ -215,6 +215,19 @@ export function createBufferData(gl, data) {
   gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
   return bufferObj;
 }
+
+export function createElementArrayBuffer(gl, data) {
+  let indexBuffer = gl.createBuffer();
+  if (!indexBuffer) {
+    console.log('Failed to create the index buffer.');
+    return -1;
+  }
+  // Bind the buffer object to target
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+  // Write date into the buffer object
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, data, gl.STATIC_DRAW);
+  return indexBuffer;
+}
 /**
  * Sends data to an attribute variable using a buffer.
  *
@@ -271,7 +284,7 @@ export function setIndexBuffer(gl, indices) {
  */
 export function tellGLSLToDrawCurrentBuffer(gl, pointCount) {
   // Recommendations: Should only be one line of code.
-  gl.drawElements(gl.TRIANGLES, pointCount, gl.UNSIGNED_BYTE, 0);
+  gl.drawElements(gl.TRIANGLES, pointCount, gl.UNSIGNED_SHORT, 0);
 }
 
 /**

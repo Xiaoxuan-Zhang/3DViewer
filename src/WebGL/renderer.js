@@ -1,10 +1,8 @@
 import * as  WebGLUtils from 'src/WebGL/lib/webgl-utils';
 import * as WebGLFunc from 'src/WebGL/lib/webglFunctions.js';
-import Scene from "src/WebGL/scene.js";
-import Camera from "src/WebGL/camera.js";
 import Material from "src/WebGL/material.js";
-import Cube from "src/WebGL/geometries/cube.js";
 import Square from "src/WebGL/geometries/square.js";
+import finalPassShader from "src/WebGL/shaders/finalPass.js";
 import CustomObject from "src/WebGL/geometries/object.js";
 
 /**
@@ -23,9 +21,8 @@ class Renderer {
     this.framebuffer = {};
     this.scene = null;
     this.camera = null;
-    this.frameBufferTexture = {};
-    this.secondPass = false;
     this.final = null;
+    this.frameBufferTexture = {};
     this.fogNear = 0.1,
     this.fogFar = 1000.0;
     this.fogAmount = 1.0;
@@ -73,16 +70,17 @@ class Renderer {
   init(scene, camera) {
     this.scene = scene;
     this.camera = camera;
-    this._initContext();
+    this._initWebGLContext();
     this._initFramebuffers();
     this._createTextures();
     this._compileShaders();
+    //this._createFinalSquad();
     this._createBufferData();
 
     this.resizeCanvas();
   }
   
-  _initContext() {
+  _initWebGLContext() {
     const gl = this.gl;
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     gl.clearColor(0.5, 0.5, 0.5, 1.0);
@@ -149,12 +147,24 @@ class Renderer {
   }
 
   _createBufferData() {
-    this.scene.geometries.forEach( geometry => {
-      WebGLUtils.useShader(this.gl, geometry.material.shaderProgram);
-      geometry.setBuffer('Vertices', WebGLFunc.createBufferData(this.gl, new Float32Array(geometry.vertices)), 3);
-      geometry.setBuffer('UVs', WebGLFunc.createBufferData(this.gl, new Float32Array(geometry.UVs)), 2);
-      geometry.setBuffer('Normals', WebGLFunc.createBufferData(this.gl, new Float32Array(geometry.normals)), 3);
+    this.scene.geometries.forEach( geo => {
+      WebGLUtils.useShader(this.gl, geo.material.shaderProgram);
+      geo.setBuffer('Vertices', WebGLFunc.createBufferData(this.gl, new Float32Array(geo.vertices)), 3);
+      geo.setBuffer('UVs', WebGLFunc.createBufferData(this.gl, new Float32Array(geo.UVs)), 2);
+      geo.setBuffer('Normals', WebGLFunc.createBufferData(this.gl, new Float32Array(geo.normals)), 3);
+
+      if (geo.indices.length > 0) {
+        geo.setBuffer('Indices', WebGLFunc.createElementArrayBuffer(this.gl, new Uint16Array(geo.indices)), 3);
+      }
     });
+
+    if (this.scene.skybox) {
+      const skybox = this.scene.skybox;
+      WebGLUtils.useShader(this.gl, skybox.material.shaderProgram);
+      skybox.setBuffer('Vertices', WebGLFunc.createBufferData(this.gl, new Float32Array(skybox.vertices)), 3);
+      skybox.setBuffer('UVs', WebGLFunc.createBufferData(this.gl, new Float32Array(skybox.UVs)), 2);
+      skybox.setBuffer('Normals', WebGLFunc.createBufferData(this.gl, new Float32Array(skybox.normals)), 3);
+    }
   }
   
   _compileShaders() {
@@ -162,6 +172,12 @@ class Renderer {
       const { vertex, fragment } = geo.material.shaders;
       geo.material.shaderProgram = WebGLUtils.createShader(this.gl, vertex, fragment);
     });
+
+    if (this.scene.skybox) {
+      const skybox = this.scene.skybox;
+      const { vertex, fragment } = skybox.material.shaders;
+      skybox.material.shaderProgram = WebGLUtils.createShader(this.gl, vertex, fragment);
+    }
   }
 
   _createTextures() {
@@ -175,12 +191,20 @@ class Renderer {
         }
       }
     });
+    
+    if (this.scene.skybox) {
+      const skybox = this.scene.skybox;
+      const uniforms = skybox.material.uniforms;
+      for (let key in uniforms) {
+        const {type, value} = uniforms[key];
+        if (type === "texture" && value && typeof value === "object") {
+          const {image, properties: {minParam, magParam, wrapSParam, wrapTParam}} = value;
+          value["textureObj"] = WebGLFunc.create2DTexture(this.gl, image, this.gl[minParam], this.gl[magParam], this.gl[wrapSParam], this.gl[wrapTParam]);
+        }
+      }
+    }
   }
   
-  setSecondPass(enabled) {
-    this.secondPass = enabled;
-  }
-
   setFog(near, far, fogAmount, fogColor) {
     this.fogNear = near,
     this.fogFar = far;
@@ -188,9 +212,9 @@ class Renderer {
     this.fogColor = fogColor;
   }
 
-  createFinalSquad() {
-    let geo = new Square();
-    let uniforms = {
+  _createFinalSquad() {
+    const geo = new Square();
+    const uniforms = {
       u_near: {type: "f", value: this.fogNear},
       u_far: {type: "f", value: this.fogFar},
       u_fog: {type: "f", value: this.fogAmount},
@@ -198,9 +222,19 @@ class Renderer {
       u_sample: {type: "texture", value: this.frameBufferTexture['color']},
       u_depth: {type: "texture", value: this.frameBufferTexture['depth']},
     };
-    let material = new Material(uniforms, this.shaderProgram["Final"]);
+    const material = new Material({uniforms, shaders: finalPassShader});
     geo.addMaterial(material);
     this.final = geo;
+    
+    // Compile final pass shaders
+    const { vertex, fragment } = finalPassShader;
+    geo.material.shaderProgram = WebGLUtils.createShader(this.gl, vertex, fragment);
+    
+    // Create buffer data
+    geo.setBuffer('Vertices', WebGLFunc.createBufferData(this.gl, new Float32Array(geo.vertices)), 3);
+    geo.setBuffer('UVs', WebGLFunc.createBufferData(this.gl, new Float32Array(geo.UVs)), 2);
+    geo.setBuffer('Normals', WebGLFunc.createBufferData(this.gl, new Float32Array(geo.normals)), 3);
+    
   }
 
   _sendMaterialUniforms(materialObj) {
@@ -237,36 +271,62 @@ class Renderer {
   }
 
   _sendCameraUniforms() {
-    const { viewMatrix, projectionMatrix, position } = this.camera;
+    if (!this.camera) {
+      console.log("No camera is found.");
+      return;
+    }
+    const { viewMatrix, projectionMatrix, position, viewProjectionInvMatrix } = this.camera;
     WebGLFunc.sendUniformMat4ToGLSL(this.gl, viewMatrix, "u_view");
     WebGLFunc.sendUniformMat4ToGLSL(this.gl, projectionMatrix, "u_projection");
     WebGLFunc.sendUniformVec3ToGLSL(this.gl, position, "u_cameraPos");
+    if (this.scene.skybox) {
+      WebGLFunc.sendUniformMat4ToGLSL(this.gl, viewProjectionInvMatrix, "u_viewProjectInvMatrix");
+    }
+  }
+  
+  _sendLightUniforms() {
+    if (!this.scene.light) {
+      console.log("No light is found");
+      return;
+    }
+    const { position, color, specularColor } = this.scene.light;
+    WebGLFunc.sendUniformVec3ToGLSL(this.gl, position, 'u_lightPos');
+    WebGLFunc.sendUniformVec3ToGLSL(this.gl, color, 'u_lightColor');
+    WebGLFunc.sendUniformVec3ToGLSL(this.gl, specularColor, 'u_specularColor');
   }
 
   _renderObject(renderObj) {
-    const { material, vertices, normals, UVs, buffer } = renderObj;
+    const { material, vertices, normals, indices, UVs, buffer } = renderObj;
     WebGLUtils.useShader(this.gl, material.shaderProgram);
     
-    if (vertices.length != 0) {
+    if (vertices.length > 0) {
       WebGLFunc.sendAttributeBufferToGLSL(this.gl, buffer['Vertices'].buffer, buffer['Vertices'].dataCount, "a_position");
     }
-    if (normals.length != 0) {
+    if (normals.length > 0) {
       WebGLFunc.sendAttributeBufferToGLSL(this.gl, buffer['Normals'].buffer, buffer['Normals'].dataCount, "a_normal");
     }
-    if (UVs.length != 0) {
+    if (UVs.length > 0) {
       WebGLFunc.sendAttributeBufferToGLSL(this.gl, buffer['UVs'].buffer, buffer['UVs'].dataCount, "a_texCoord");
     }
+
     this._sendMaterialUniforms(material);
     this._sendCameraUniforms();
+    this._sendLightUniforms();
 
-    WebGLFunc.tellGLSLToDrawArrays(this.gl, vertices.length/3);
+    if (indices.length > 0) {
+      WebGLFunc.tellGLSLToDrawCurrentBuffer(this.gl, indices.length);
+    } else {
+      WebGLFunc.tellGLSLToDrawArrays(this.gl, vertices.length/3);
+    }
+    
   }
 
   render() {
-    // Update animations
-    this.scene.updateAnimation();
-
     const gl = this.gl;
+
+    // Update animations
+    this.scene.updateAnimation()
+    
     //first pass : render to framebuffer
     if (this.final != null) {
       gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer['first']);
@@ -279,6 +339,7 @@ class Renderer {
     this.scene.geometries.forEach( geo => {
       this._renderObject(geo);
     })
+    
     gl.flush();
     
     if (this.scene.skybox) {
@@ -291,10 +352,10 @@ class Renderer {
 
     //Second pass : render to scene
     if (this.final != null) {
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-        this._renderObject(this.final);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      this._renderObject(this.final);
     }
   }
 
