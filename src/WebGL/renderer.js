@@ -3,7 +3,6 @@ import * as WebGLFunc from 'src/WebGL/lib/webglFunctions.js';
 import Material from "src/WebGL/material.js";
 import Square from "src/WebGL/geometries/square.js";
 import finalPassShader from "src/WebGL/shaders/finalPass.js";
-import CustomObject from "src/WebGL/geometries/object.js";
 
 /**
  * A renderer that manages webgl resources
@@ -22,11 +21,16 @@ class Renderer {
     this.scene = null;
     this.camera = null;
     this.final = null;
+    this.multiPassEnabled = false;
     this.frameBufferTexture = {};
     this.fogNear = 0.1,
-    this.fogFar = 1000.0;
-    this.fogAmount = 1.0;
+    this.fogFar = 20.0;
+    this.fogAmount = 0.5;
     this.fogColor = [255, 255, 255];
+    this.isMousedown = false;
+    this.lastMouse = [0.0, 0.0];
+    this.deltaMouse = [0.0, 0.0];
+    this.mousePos = [0.0, 0.0];
 
     this.domElement = document.getElementById(divId);
     if (!this.domElement) {
@@ -40,31 +44,7 @@ class Renderer {
       return false;
     }
 
-    window.addEventListener("resize", () => {
-      this.resizeCanvas();
-    }, false);
-
-    document.addEventListener('keydown', (ev) => {
-      if (this.camera) {
-        if(ev.key == 'w') {
-          this.camera.move("forward");
-        } else if (ev.key == 's') {
-          this.camera.move("backward");
-        } else if (ev.key == 'a') {
-          this.camera.move("right");
-        } else if (ev.key == 'd'){
-          this.camera.move("left");
-        } else if (ev.key == 'i'){
-          this.camera.rotate("up");
-        } else if (ev.key == 'k'){
-          this.camera.rotate("down");
-        } else if (ev.key == 'j'){
-          this.camera.rotate("left");
-        } else if (ev.key == 'l'){
-          this.camera.rotate("right");
-        } else { return; } // Prevent the unnecessary drawing
-      }
-    });
+    this._initEventHandelers();
   }
 
   init(scene, camera) {
@@ -74,12 +54,85 @@ class Renderer {
     this._initFramebuffers();
     this._createTextures();
     this._compileShaders();
-    //this._createFinalSquad();
+    this._createFinalSquad();
     this._createBufferData();
-
     this.resizeCanvas();
   }
+
+  setFog(near, far, fogAmount, fogColor) {
+    this.fogNear = near,
+    this.fogFar = far;
+    this.fogAmount = fogAmount;
+    this.fogColor = fogColor;
+  }
+
+  resizeCanvas() {
+    const gl = this.gl;
+    let realToCSSPixels = window.devicePixelRatio;
+    // Lookup the size the browser is displaying the canvas in CSS pixels
+    // and compute a size needed to make our drawingbuffer match it in
+    // device pixels.
+    let displayWidth  = Math.floor(gl.canvas.clientWidth  * realToCSSPixels);
+    let displayHeight = Math.floor(gl.canvas.clientHeight * realToCSSPixels);
+
+    // Check if the canvas is not the same size.
+    if (gl.canvas.width  != displayWidth ||
+        gl.canvas.height != displayHeight) {
+
+      // Make the canvas the same size
+      gl.canvas.width  = displayWidth;
+      gl.canvas.height = displayHeight;
+    }
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    if (this.camera) {
+      this.camera.updateProjectionMatrix();
+    }
+    this._updateRenderTexture();
+  }
   
+  setMultiPass(enabled) {
+    this.multiPassEnabled = enabled;
+  }
+
+  render() {
+    const gl = this.gl;
+
+    // Update animations
+    this.scene.updateAnimation()
+    this.camera.updateAnimation();
+    
+    //first pass : render to framebuffer
+    if (this.multiPassEnabled) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer['first']);
+    } else {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    }
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    
+    this.scene.geometries.forEach( geo => {
+      this._renderObject(geo);
+    })
+    
+    gl.flush();
+    
+    if (this.scene.skybox) {
+      gl.disable(gl.CULL_FACE);
+      gl.depthFunc(gl.LEQUAL);
+      this._renderObject(this.scene.skybox);
+      gl.depthFunc(gl.LESS);
+      gl.enable(gl.CULL_FACE);
+    }
+
+    //Second pass : render to scene
+    if (this.multiPassEnabled) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      this._renderObject(this.final);
+    }
+  }
+
   _initWebGLContext() {
     const gl = this.gl;
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -89,7 +142,7 @@ class Renderer {
     gl.enable(gl.CULL_FACE);
     gl.frontFace(gl.CCW);
   }
-
+  
   _initFramebuffers() {
     // Create and bind the framebuffer
     const gl = this.gl;
@@ -115,35 +168,73 @@ class Renderer {
 
   _updateRenderTexture() {
     const gl = this.gl;
-    if (this.frameBufferTexture) {
-      Object.keys(this.frameBufferTexture).forEach( key => {
-        WebGLFunc.updateNullTexture(gl, this.frameBufferTexture[key], gl.canvas.width, gl.canvas.height, gl.RGBA, gl.RGBA, 0, gl.UNSIGNED_BYTE, gl.NEAREST, gl.NEAREST, gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE);
-      })
+    if ('color' in this.frameBufferTexture) {
+      WebGLFunc.updateNullTexture(gl, this.frameBufferTexture['color'], gl.canvas.width, gl.canvas.height, gl.RGBA, gl.RGBA, 0, gl.UNSIGNED_BYTE, gl.NEAREST, gl.NEAREST, gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE);
+    }
+    if ('depth' in this.frameBufferTexture) {
+      WebGLFunc.updateNullTexture(gl, this.frameBufferTexture['depth'], gl.canvas.width, gl.canvas.height, gl.DEPTH_COMPONENT24, gl.DEPTH_COMPONENT, 0, gl.UNSIGNED_INT, gl.NEAREST, gl.NEAREST, gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE);
     }
   }
 
-  resizeCanvas() {
-    const gl = this.gl;
-    let realToCSSPixels = window.devicePixelRatio;
-    // Lookup the size the browser is displaying the canvas in CSS pixels
-    // and compute a size needed to make our drawingbuffer match it in
-    // device pixels.
-    let displayWidth  = Math.floor(gl.canvas.clientWidth  * realToCSSPixels);
-    let displayHeight = Math.floor(gl.canvas.clientHeight * realToCSSPixels);
+  _initEventHandelers() {
+    // Mouse drag
+    const canvas = this.domElement;
+    canvas.onmouseup = ev => {
+      this.isMousedown = false;
+    };
+    canvas.onmousedown = ev => {
+      this.isMousedown = true;
+      this._handleMouseClick(ev)
+    };
+    canvas.onmousemove = ev => {
+      if (this.isMousedown) {
+        this._handleMouseClick(ev);
+      } else {
+        let x = ev.clientX;
+        let y = ev.clientY;
+        let rect = ev.target.getBoundingClientRect();
+        x = (x - rect.left) * 2.0/canvas.width - 1.0;
+        y = (y - rect.top) * -2.0/canvas.height + 1.0;
+        this.lastMouse = [x, y];
+      }
+    };
 
-    // Check if the canvas is not the same size.
-    if (gl.canvas.width  != displayWidth ||
-        gl.canvas.height != displayHeight) {
+    // Camera movement with keyboard
+    document.addEventListener('keydown', (ev) => {
+      if (this.camera) {
+        if(ev.key == 'w') {
+          this.camera.move("forward");
+        } else if (ev.key == 's') {
+          this.camera.move("backward");
+        } else if (ev.key == 'a') {
+          this.camera.move("right");
+        } else if (ev.key == 'd'){
+          this.camera.move("left");
+        } else if (ev.key == 'i'){
+          this.camera.rotate("up");
+        } else if (ev.key == 'k'){
+          this.camera.rotate("down");
+        } else if (ev.key == 'j'){
+          this.camera.rotate("left");
+        } else if (ev.key == 'l'){
+          this.camera.rotate("right");
+        } else { return; } // Prevent the unnecessary drawing
+      }
+    });
+  }
 
-      // Make the canvas the same size
-      gl.canvas.width  = displayWidth;
-      gl.canvas.height = displayHeight;
-    }
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    if (this.camera) {
-      this.camera.updateProjectionMatrix();
-    }
-    this._updateRenderTexture();
+  _handleMouseClick(ev) {
+    const canvas = this.domElement;
+    let x = ev.clientX;
+    let y = ev.clientY;
+    let rect = ev.target.getBoundingClientRect();
+    x = (x - rect.left) * 2.0/canvas.width - 1.0;
+    y = (y - rect.top) * -2.0/canvas.height + 1.0;
+    let deltaMouse = [];
+    deltaMouse[0] = x - this.lastMouse[0];
+    deltaMouse[1] = y - this.lastMouse[1];
+    this.lastMouse = [x, y];
+    this.camera.rotateWithMouse(deltaMouse[0], deltaMouse[1]);
   }
 
   _createBufferData() {
@@ -205,13 +296,6 @@ class Renderer {
     }
   }
   
-  setFog(near, far, fogAmount, fogColor) {
-    this.fogNear = near,
-    this.fogFar = far;
-    this.fogAmount = fogAmount;
-    this.fogColor = fogColor;
-  }
-
   _createFinalSquad() {
     const geo = new Square();
     const uniforms = {
@@ -219,8 +303,8 @@ class Renderer {
       u_far: {type: "f", value: this.fogFar},
       u_fog: {type: "f", value: this.fogAmount},
       u_fogColor: {type: "v3", value: this.fogColor},
-      u_sample: {type: "texture", value: this.frameBufferTexture['color']},
-      u_depth: {type: "texture", value: this.frameBufferTexture['depth']},
+      u_sample: {type: "texture", value: {textureObj: this.frameBufferTexture['color']}},
+      u_depth: {type: "texture", value: {textureObj: this.frameBufferTexture['depth']}},
     };
     const material = new Material({uniforms, shaders: finalPassShader});
     geo.addMaterial(material);
@@ -266,6 +350,8 @@ class Renderer {
         WebGLFunc.sendUniformVec4ToGLSL(this.gl, value, name);
       } else if (type == "mat4") {
         WebGLFunc.sendUniformMat4ToGLSL(this.gl, value, name);
+      } else if (type == "mouse") {
+        WebGLFunc.sendUniformVec2ToGLSL(this.gl, this.lastMouse, name);
       }
     }
   }
@@ -286,7 +372,6 @@ class Renderer {
   
   _sendLightUniforms() {
     if (!this.scene.light) {
-      console.log("No light is found");
       return;
     }
     const { position, color, specularColor } = this.scene.light;
@@ -319,44 +404,6 @@ class Renderer {
       WebGLFunc.tellGLSLToDrawArrays(this.gl, vertices.length/3);
     }
     
-  }
-
-  render() {
-    const gl = this.gl;
-
-    // Update animations
-    this.scene.updateAnimation()
-    
-    //first pass : render to framebuffer
-    if (this.final != null) {
-      gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer['first']);
-    } else {
-      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    }
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    
-    this.scene.geometries.forEach( geo => {
-      this._renderObject(geo);
-    })
-    
-    gl.flush();
-    
-    if (this.scene.skybox) {
-      gl.disable(gl.CULL_FACE);
-      gl.depthFunc(gl.LEQUAL);
-      this._renderObject(this.scene.skybox);
-      gl.depthFunc(gl.LESS);
-      gl.enable(gl.CULL_FACE);
-    }
-
-    //Second pass : render to scene
-    if (this.final != null) {
-      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-      gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-      this._renderObject(this.final);
-    }
   }
 
 }

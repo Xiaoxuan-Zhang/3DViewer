@@ -39,3 +39,26 @@ html body {
   float: right;
 }
 
+.bd-light-purple {
+  border-color: $light-purple;
+}
+
+select {
+  border-width: 0px;
+}
+
+.divider {
+  border-top: 0.1rem solid $light-purple;
+  margin: 0.2rem;
+}
+
+.model-loader-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+textarea {
+  color: $font-light-gray;
+  background-color: $bg-black;
+}
+

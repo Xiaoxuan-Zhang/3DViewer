@@ -39,16 +39,17 @@ float perspectiveDepth() {
 }
 
 void main(){
-  vec3 texColor = texture(u_sample, v_texCoord).rgb;
+  vec2 uv = v_texCoord;
+  vec3 texColor = texture(u_sample, uv).rgb;
   float depth = perspectiveDepth();
-  //float depth = texture(u_depth, v_texCoord).r;
+  //float depth = texture(u_depth, uv).r;
   //unfog skybox
-  if (depth > 0.99) {
-    depth = 0.4;
-  }
+  // if (depth > 0.99) {
+  //   depth = 0.4;
+  // }
   vec3 fogColor = u_fogColor / 255.0;
   float b = u_fog;
-  float fogAmount = exp(-b*depth);
+  float fogAmount = exp(-b*b*depth);
   vec3 color = mix(fogColor, texColor, fogAmount);
   outColor = vec4(color, 1.0);
 }

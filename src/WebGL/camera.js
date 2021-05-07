@@ -30,7 +30,7 @@ var Camera = function() {
   this.deltaTime = 0.0;
   this.lastTime = performance.now();
   this.rotationSpeed = 0.5;
-  this.speed = 0.1;
+  this.speed = 0.02;
   this.sensitivity = 100.0;
   this.update();
 }
@@ -256,6 +256,12 @@ Camera.prototype.getViewDistanceXZ = function(target) {
   let distance = Math.sqrt(Math.pow((target[0] - this.position[0]),2)
                 + Math.pow((target[2] - this.position[2]),2));
   return distance;
+}
+
+Camera.prototype.updateAnimation = function() {
+  let currTime = performance.now();
+  this.deltaTime = currTime - this.lastTime;
+  this.lastTime = currTime;
 }
 
 export default Camera;

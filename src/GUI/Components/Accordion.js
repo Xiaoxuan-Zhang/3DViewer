@@ -29,7 +29,7 @@ class Accordion extends UIComponent {
       input.setAttribute("id", inputId);
       // label
       const label = document.createElement("label");
-      label.setAttribute("class", "tab-label");
+      label.setAttribute("class", "tab-label f6");
       label.setAttribute("for", inputId);
       label.innerHTML = name;
       // content div

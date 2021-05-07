@@ -27,6 +27,7 @@ var fragment = `#version 300 es
   uniform vec3 u_cameraPos;
   uniform vec3 u_lightColor;
   uniform vec3 u_color;
+  uniform sampler2D u_sample;
 
   in vec3 v_normal;
   in vec3 v_fragPos;
@@ -36,10 +37,11 @@ var fragment = `#version 300 es
     vec3 normal = normalize(v_normal);
     //calculate ambient light
     vec3 ambientColor = 0.05 * u_lightColor * u_color;
+    vec3 diffColor = u_color;
     //calculate diffuse light
     vec3 lightDir = normalize(u_lightPos - v_fragPos);
     float nDotL = max(dot(lightDir, normal), 0.0);
-    vec3 diffuseColor = u_color * nDotL;
+    vec3 diffuseColor = diffColor * nDotL;
     //calculate specular light
     vec3 viewDir = normalize(u_cameraPos-v_fragPos);
     vec3 reflectDir = reflect(-lightDir, normal);

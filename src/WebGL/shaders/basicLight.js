@@ -55,7 +55,6 @@ var fragment = `#version 300 es
     float spec = pow(max(dot(reflectDir, viewDir), 0.0), 64.0);
     vec3 specularColor = u_specularColor * spec * texSpec.r;
     outColor = vec4(ambientColor + diffuseColor + specularColor , 1.0);
-    outColor = vec4(texDiff, 1.0);
   }
   `;
   

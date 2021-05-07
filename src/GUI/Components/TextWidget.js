@@ -13,7 +13,7 @@ class TextEditor extends UIComponent {
             <form class="black-80">
                 <div content-editable>
                     <label for="${id}" class="f6 b db mb2">${title}</label>
-                    <textarea id=${this.textAreaId} name="${id}" class="textbox lh-copy db border-box hover-black w-100 ba b--black-20 pa2 br2 mb2 f6" aria-describedby="${title}-desc">
+                    <textarea id=${this.textAreaId} name="${id}" class="textbox lh-copy db border-box hover-white w-100 ba pa2 br2 mb2 f6" aria-describedby="${title}-desc">
                         ${text}
                     </textarea>
                 </div>
