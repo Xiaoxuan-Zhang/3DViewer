@@ -3,6 +3,8 @@ import finalPassShader from "src/WebGL/shaders/finalPass.js";
 import skyShader from 'src/WebGL/shaders/sky.js';
 import simpleShader from "src/WebGL/shaders/simpleColor.js";
 import fullScreenShader from "src/WebGL/shaders/fullscreen.js";
+import zenTimeShader from "src/WebGL/shaders/shadertoy_zentime.js";
+import thatCatShader from "src/WebGL/shaders/shadertoy_thatcat.js";
 import noise64 from "src/external/textures/noise64.png";
 import wood from "src/external/textures/wood.png";
 import catDiffuse from "src/external/models/Cat-1/Cat_D.png";
@@ -10,30 +12,43 @@ import catNormal from "src/external/models/Cat-1/Cat_N.png";
 import catSpecular from "src/external/models/Cat-1/Cat_S.png";
 import catModel from "src/external/models/Cat-1/Cat.obj";
 
-const initLocalData = {
+const appData = {
     // Shaders
     shaders: {
+      "3D": {
         "BasicLight": basicLightShader,
         "FinalPass":  finalPassShader,
-        "Sky": skyShader,
         "SimpleColor": simpleShader,
-        "FullScreen": fullScreenShader
+        "Sky": skyShader
+      },
+      "2D": {
+        "FullScreen": fullScreenShader,
+        "ZenTime": zenTimeShader,
+        "ThatCat": thatCatShader,
+      }
+    },
+    currentShader: {
+      "2D": "ZenTime",
+      "3D": "BasicLight"
     },
     model: {
       "modelType": "custom",
       "model": catModel,
       "textures": {
-        "diffuse": {
+        "diffuseMap": {
           path: catDiffuse,
-          img: null
+          img: null,
+          desc: "Diffuse Map"
         },
         "normalMap": {
           path: catNormal,
-          img: null
+          img: null,
+          desc: "Normal Map"
         },
         "specularMap": {
           path: catSpecular,
-          img: null
+          img: null,
+          desc: "Specular Map"
         }
       },
     },
@@ -48,7 +63,16 @@ const initLocalData = {
       }
     }
 }
+const appStore = {
+  get: () => Object.assign({}, appData),
+  getById: id => Object.assign({}, appData[id]),
+  setDataById: (id, newData) => {
+    appData[id] = Object.assign({}, {...appData[id], ...newData});
+  }
+}
 
-export default initLocalData;
+Object.freeze(appStore);
+
+export default appStore;
 
   

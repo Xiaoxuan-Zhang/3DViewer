@@ -43,7 +43,7 @@ class Renderer {
       console.log('Failed to get the webgl context');
       return false;
     }
-
+    this._initFramebuffers();
     this._initEventHandelers();
   }
 
@@ -51,7 +51,6 @@ class Renderer {
     this.scene = scene;
     this.camera = camera;
     this._initWebGLContext();
-    this._initFramebuffers();
     this._createTextures();
     this._compileShaders();
     this._createFinalSquad();
@@ -332,26 +331,29 @@ class Renderer {
         type = uniforms[key].type;
       }
 
-      if (type == "f") {
+      if (type === "f") {
         WebGLFunc.sendUniformFloatToGLSL(this.gl, value, name);
-      } else if (type == "t") {
+      } else if (type === "t") {
         WebGLFunc.sendUniformFloatToGLSL(this.gl, performance.now() / 10000.0, name);
-      } else if (type == "int") {
+      } else if (type === "int") {
         WebGLFunc.sendUniformUintToGLSL(this.gl, value, name);
-      } else if (type == "texture") {
+      } else if (type === "texture") {
         WebGLFunc.send2DTextureToGLSL(this.gl, value["textureObj"], materialObj.getTextureUnit(name), name);
-      } else if (type == "cubemap") {
+      } else if (type === "cubemap") {
         WebGLFunc.sendCubemapToGLSL(this.gl, value, materialObj.getTextureUnit(name), name);
-      } else if (type == "v2") {
+      } else if (type === "v2") {
         WebGLFunc.sendUniformVec2ToGLSL(this.gl, value, name);
-      } else if (type == "v3") {
+      } else if (type === "v3") {
         WebGLFunc.sendUniformVec3ToGLSL(this.gl, value, name);
-      } else if (type == "v4") {
+      } else if (type === "v4") {
         WebGLFunc.sendUniformVec4ToGLSL(this.gl, value, name);
-      } else if (type == "mat4") {
+      } else if (type === "mat4") {
         WebGLFunc.sendUniformMat4ToGLSL(this.gl, value, name);
-      } else if (type == "mouse") {
+      } else if (type === "mouse") {
         WebGLFunc.sendUniformVec2ToGLSL(this.gl, this.lastMouse, name);
+      } else if (type === "resolution") {
+        const res = [this.gl.canvas.clientWidth, this.gl.canvas.clientHeight];
+        WebGLFunc.sendUniformVec2ToGLSL(this.gl, res, name);
       }
     }
   }

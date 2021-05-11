@@ -12,7 +12,7 @@ class Dropdown extends UIComponent {
         wrapperDiv.appendChild(label);
         const selector = document.createElement("select");
         selector.id = `selector-${id}`;
-        selector.className = "f7 link dim br2 ph2 pv1 mb2 dib white bg-mid-gray";
+        selector.className = "f7 link dim br2 ph2 pv1 mb1 mt1 dib white bg-mid-gray";
         items.forEach( item => {
           const option = document.createElement("option");
           option.value = item.toLowerCase();

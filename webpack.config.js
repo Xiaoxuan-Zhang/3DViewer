@@ -22,6 +22,7 @@ module.exports = {
     contentBase: './deploy',
     open: true
   },
+  devtool: 'source-map',
   module: {
     rules: [
       {

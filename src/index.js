@@ -9,10 +9,10 @@ const CANVAS_ID = "webgl-canvas";
 const load = () => {
   
   // TODO: add an animated loading indicator
-
+  
   // Load local resources
   let promiseList = [];
-  const textures = Store.model.textures;
+  const textures = Store.getById("model").textures;
   Object.keys(textures).forEach(key => {
     promiseList.push(
       new Promise((resolve, reject) => {
@@ -25,7 +25,7 @@ const load = () => {
       })
     )
   });
-  const images = Store.images;
+  const images = Store.getById("images");
   Object.keys(images).forEach( key => {
     promiseList.push(
       new Promise((resolve, reject) => {
@@ -36,11 +36,17 @@ const load = () => {
       })
       .then( ({img, key}) => {
         images[key].img = img;
+        
       })
     )
   })
+
   Promise.all(promiseList)
   .then(() => {
+    const model = Store.getById("model");
+    model.textures = textures;
+    Store.setDataById("model", model);
+    Store.setDataById("images", images);
     render();
   })
   .catch( err => {
@@ -61,11 +67,23 @@ const render = () => {
     renderer.resizeCanvas();
   }, false);
 
-  ui.addListener( "SUBMIT_SHADER", () => {
-    if (sessionStorage && "textarea-BasicLight" in sessionStorage) {
-      Store.shaders["BasicLight"].fragment = sessionStorage["textarea-BasicLight"];
+  ui.addListener( "SUBMIT_SHADER", (selectedScene, selectedShader) => {
+    if (sessionStorage && `textarea-${selectedShader}` in sessionStorage) {
+      const currShaders = Store.getById("shaders");
+      currShaders[selectedScene][selectedShader].fragment = sessionStorage[`textarea-${selectedShader}`];
+      Store.setDataById("shaders", currShaders);
     }
-    renderer.init(scene, camera);
+    if (selectedScene === "3D") {
+      const { scene, camera } = create3DScene(Store);
+      renderer.init(scene, camera);
+    } else {
+      const currentShader = Store.getById("currentShader");
+      currentShader["2D"] = selectedShader;
+      Store.setDataById("currentShader", currentShader);
+      const { scene, camera } = createFullScreenSquad(Store);
+      renderer.init(scene, camera);
+    }
+    
   });
 
   ui.addListener("SELECT_SCENE", option => {
@@ -76,6 +94,11 @@ const render = () => {
       const { scene, camera } = create3DScene(Store);
       renderer.init(scene, camera);
     }
+  })
+
+  ui.addListener("UPDATE_MODEL", () => {
+    const { scene, camera } = create3DScene(Store);
+    renderer.init(scene, camera);
   })
 
   const animate = () => {

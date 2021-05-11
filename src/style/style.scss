@@ -17,21 +17,13 @@ html body {
   z-index: 0;
 }
 
-#main-layout {
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 1000;
-}
-
 .side-bar-right {
   position:absolute;
   right: 0;
   top: 0;
   width: 30%;
-  height: 100%;
+  height: calc(100vh);
+  overflow-y: auto;
   background-color: $bg-transparent;
 }
 
@@ -48,8 +40,7 @@ select {
 }
 
 .divider {
-  border-top: 0.1rem solid $light-purple;
-  margin: 0.2rem;
+  border-top: 0.1rem solid $light-grey;
 }
 
 .model-loader-wrapper {
@@ -60,5 +51,9 @@ select {
 textarea {
   color: $font-light-gray;
   background-color: $bg-black;
+}
+
+.cursor-pointer {
+  cursor: pointer
 }
 

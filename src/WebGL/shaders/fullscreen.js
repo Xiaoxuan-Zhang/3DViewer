@@ -6,11 +6,13 @@ var vertex =
   in vec3 a_normal;
   out vec2 v_texCoord;
   out vec3 v_normal;
+  out vec4 v_fragPos;
 
   void main(){
     gl_Position = a_position;
     v_texCoord = a_texCoord;
     v_normal = a_normal;
+    v_fragPos = a_position;
   }
 `;
 
@@ -22,6 +24,7 @@ uniform vec2 u_mouse;
 uniform float u_time;
 in vec2 v_texCoord;
 in vec3 v_normal;
+in vec4 v_fragPos;
 out vec4 outColor;
 
 void main(){

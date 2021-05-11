@@ -1,7 +1,7 @@
 import UIComponent from "src/GUI/Components/UIComponent.js";
 
 class Tabs extends UIComponent {
-    constructor(id, items) {
+    constructor(id, items, selected=null) {
         super();
         const wrapperDiv = document.createElement("div");
         wrapperDiv.id = id;
@@ -15,9 +15,13 @@ class Tabs extends UIComponent {
             option.innerText = title;
             selector.appendChild(option);
         })
+        if (selected) {
+            selector.value = selected.toLowerCase();
+        }
         wrapperDiv.appendChild(selector);
-        let visible = true;
+        
         items.forEach( item => {
+            let visible = selected === item.title ? true : false;
             wrapperDiv.appendChild(this._createContent(item, visible));
             visible = false;
         })

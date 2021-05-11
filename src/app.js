@@ -7,7 +7,7 @@ import Cube from "src/WebGL/geometries/cube.js";
 import Square from "src/WebGL/geometries/square.js";
 import CustomObject from "src/WebGL/geometries/object.js";
   
-const createCube = (store, {
+const _createCube = (data, {
     translate=[0.0, 0.0, 0.0], 
     scale=[1.0, 1.0, 1.0], 
     rotateDegree=0.0, 
@@ -15,12 +15,15 @@ const createCube = (store, {
     autoRotate=false
 }) => {
     const geo = new Cube();
+    const { images, shaders } = data;
+    const texImg = images["wood"].img;
     const uniforms = {
         u_model: {type: "mat4", value: geo.modelMatrix},
         u_normalMatrix: {type: "mat4", value: geo.normalMatrix},
-        u_sample: {type: "texture", value: new Texture(store.images["wood"].img)},
+        u_sample: {type: "texture", value: new Texture(texImg)},
     };
-    const material = new Material({uniforms, shaders: store.shaders["BasicLight"]});
+    const lightShader = shaders["3D"]["BasicLight"];
+    const material = new Material({uniforms, shaders: lightShader});
     geo.addMaterial(material);
     geo.translate(translate);
     geo.rotate(rotateDegree, rotateAxis);
@@ -29,7 +32,7 @@ const createCube = (store, {
     return geo;
 }
   
-const createGround = (store, {
+const _createGround = (data, {
     translate=[0.0, 0.0, 0.0], 
     scale=[1.0, 1.0, 1.0], 
     rotateDegree=0.0, 
@@ -37,14 +40,14 @@ const createGround = (store, {
     autoRotate=false
 }) => {
     const geo = new Square();
-    
+    const { shaders } = data;
     const uniforms = {
       u_model: {type: "mat4", value: geo.modelMatrix},
       u_normalMatrix: {type: "mat4", value: geo.normalMatrix},
       u_color: {type: "v3", value: [0.8, 0.8, 0.8]}
     };
-    
-    const material = new Material({uniforms, shaders: store.shaders["SimpleColor"]});
+    const colorShader = shaders["3D"]["SimpleColor"];
+    const material = new Material({uniforms, shaders: colorShader});
     geo.addMaterial(material);
     geo.translate(translate);
     geo.rotate(rotateDegree, rotateAxis);
@@ -53,26 +56,38 @@ const createGround = (store, {
     return geo;
 }
   
-const createSkybox = (store) => {
+const _createSkybox = (data) => {
     const geo = new Square();
+    const { images, shaders } = data;
+    const texImg = images["noise64"].img;
+    const skyShader = shaders["3D"]["Sky"];
     const uniforms = {
-      u_noisemap: {type: "texture", value: new Texture(store.images["noise64"].img)},
+      u_noisemap: {type: "texture", value: new Texture(texImg)},
       u_time: {type: "t", value: 0.0}
     };
-    const material = new Material({uniforms, shaders: store.shaders["Sky"]});
+    const material = new Material({uniforms, shaders: skyShader});
     geo.addMaterial(material);
     return geo;
 }
   
-const createObject = (store, {
+const _createObject = (data, {
     translate=[0.0, 0.0, 0.0], 
     scale=[1.0, 1.0, 1.0], 
     rotateDegree=0.0, 
     rotateAxis=[0,1,0], 
     autoRotate=false
 }) => {
-    const {model, shaders} = store;
+    const { model, shaders } = data;
     if (!model.model) return null;
+    // Create new obj mesh here 
+    /* 
+      let meshObj = model.model;
+      if (typeof meshObj === "string") {
+        // Parse text to mesh object
+        meshObj = new Mesh(meshObj);
+      }
+      const geo = new CustomObject(meshObj);
+    */
     const geo = new CustomObject(model.model);
     geo.translate(translate);
     geo.rotate(rotateDegree, rotateAxis);
@@ -95,7 +110,7 @@ const createObject = (store, {
       }
       uniforms[uniformKey] = {type: "texture", value: new Texture(img)};
     })
-    const material = new Material({uniforms, shaders: shaders["BasicLight"]});
+    const material = new Material({uniforms, shaders: shaders["3D"]["BasicLight"]});
     geo.addMaterial(material);
     return geo;
 }
@@ -105,16 +120,17 @@ const create3DScene = (store) => {
     const camera = new Camera();
     camera.setPerspective(40.0, 2, 0.1, 100);
     camera.setPosition([0.0, 0.0, 1.0]);
-    const { modelType } = store.model;
+    const storeData = store.get();
+    const { model, modelType } = storeData["model"];
     if (modelType === "custom") {
-      const customObj = createObject(store, {
-        modelData: store.model,
+      const customObj = _createObject(storeData, {
+        modelData: model,
         translate: [0.0, -1.0, -2.0]
       });
       scene.addGeometry(customObj);
     } else {
       //  Add some 3D stuff
-      const cube = createCube(store, {
+      const cube = _createCube(storeData, {
         translate: [-2.0, -1.0, -5.0],
         scale: [0.5, 0.5, 0.5],
         rotateDegree: 30,
@@ -124,7 +140,7 @@ const create3DScene = (store) => {
       scene.addGeometry(cube);
     }
     
-    const ground = createGround(store, {
+    const ground = _createGround(storeData, {
       translate: [0.0, -3.0, 0.0],
       scale: [50.0, 50.0, 50.0],
       rotateDegree: -90,
@@ -132,8 +148,8 @@ const create3DScene = (store) => {
     });
     scene.addGeometry(ground);
   
-    //Add a skybox
-    const skybox = createSkybox(store);
+    // //Add a skybox
+    const skybox = _createSkybox(storeData);
     scene.skybox = skybox;
   
     const light = new SimpleLight({});
@@ -147,17 +163,21 @@ const createFullScreenSquad = store => {
 
     //  Add square
     const geo = new Square();
-    
+    const storeData = store.get();
     const uniforms = {
-      u_sample: {type: "texture", value: new Texture(store.images["noise64"].img)},
-      u_time: {type: "t", value: performance.now()},
-      u_mouse: {type: "mouse", value: null}
+      u_sample: {type: "texture", value: new Texture(storeData.images["noise64"].img)},
+      u_time: {type: "t"},
+      u_mouse: {type: "mouse"},
+      u_resolution: {type: "resolution"}
     };
-    
-    const material = new Material({uniforms, shaders: store.shaders["FullScreen"]});
+    const currentShader = storeData.currentShader["2D"];
+    const material = new Material({uniforms, shaders: storeData.shaders["2D"][currentShader]});
     geo.addMaterial(material);
     scene.addGeometry(geo);
     return { scene, camera };
+}
+
+const createNewMesh = objStr => {
 }
 
 export {
