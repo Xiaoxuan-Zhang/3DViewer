@@ -59,7 +59,7 @@ const appData = {
       "Transparency": []
     },
     currentShader: {
-      "2D": "Cloud2D",
+      "2D": "ZenTime",
       "3D": "BasicLight"
     },
     currentScene: "2D",
