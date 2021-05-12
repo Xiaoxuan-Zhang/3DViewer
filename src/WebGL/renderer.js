@@ -334,7 +334,7 @@ class Renderer {
       if (type === "f") {
         WebGLFunc.sendUniformFloatToGLSL(this.gl, value, name);
       } else if (type === "t") {
-        WebGLFunc.sendUniformFloatToGLSL(this.gl, performance.now() / 10000.0, name);
+        WebGLFunc.sendUniformFloatToGLSL(this.gl, performance.now() / 1000.0, name);
       } else if (type === "int") {
         WebGLFunc.sendUniformUintToGLSL(this.gl, value, name);
       } else if (type === "texture") {

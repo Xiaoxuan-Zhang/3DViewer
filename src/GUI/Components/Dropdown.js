@@ -1,7 +1,7 @@
 import UIComponent from "src/GUI/Components/UIComponent.js";
 
 class Dropdown extends UIComponent {
-    constructor(id, title, items) {
+    constructor(id, title, items, selected=null) {
         super();
         const wrapperDiv = document.createElement("div");
         wrapperDiv.id = id;
@@ -19,6 +19,9 @@ class Dropdown extends UIComponent {
           option.innerText = item;
           selector.appendChild(option);
         })
+        if (selected) {
+          selector.value = selected.toLowerCase();
+      }
         wrapperDiv.appendChild(selector);
         this.element = wrapperDiv;
     }

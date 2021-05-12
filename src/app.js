@@ -1,3 +1,6 @@
+import WebGLRenderer from 'src/WebGL/renderer.js';
+import UI from 'src/GUI/UI.js';
+import Store from "src/store.js";
 import Scene from "src/WebGL/scene.js";
 import Camera from "src/WebGL/camera.js";
 import Material from "src/WebGL/material.js";
@@ -6,7 +9,9 @@ import SimpleLight from "src/WebGL/simpleLight.js";
 import Cube from "src/WebGL/geometries/cube.js";
 import Square from "src/WebGL/geometries/square.js";
 import CustomObject from "src/WebGL/geometries/object.js";
-  
+
+const CANVAS_ID = "webgl-canvas";
+
 const _createCube = (data, {
     translate=[0.0, 0.0, 0.0], 
     scale=[1.0, 1.0, 1.0], 
@@ -164,23 +169,76 @@ const createFullScreenSquad = store => {
     //  Add square
     const geo = new Square();
     const storeData = store.get();
+    const { textures, images } = storeData;
     const uniforms = {
-      u_sample: {type: "texture", value: new Texture(storeData.images["noise64"].img)},
       u_time: {type: "t"},
       u_mouse: {type: "mouse"},
       u_resolution: {type: "resolution"}
     };
     const currentShader = storeData.currentShader["2D"];
-    const material = new Material({uniforms, shaders: storeData.shaders["2D"][currentShader]});
+    const shader = storeData.shaders["2D"][currentShader];
+    textures[currentShader].forEach( (item, i) => {
+      let idx = i === 0 ? "" : i;
+      uniforms[`u_sample${idx}`] = {type: "texture", value: new Texture(images[item].img)};
+    })
+    const material = new Material({uniforms, shaders: shader});
     geo.addMaterial(material);
     scene.addGeometry(geo);
     return { scene, camera };
 }
 
-const createNewMesh = objStr => {
+const initScene = (renderer, sceneType, store) => {
+  if (sceneType === "3D") {
+    const { scene, camera } = create3DScene(store);
+    renderer.init(scene, camera); 
+  } else {
+    const { scene, camera } = createFullScreenSquad(store);
+    renderer.init(scene, camera);
+  }
+}
+
+const render = () => {
+  const renderer = new WebGLRenderer(CANVAS_ID);
+  const ui = UI(Store);
+  const currentScene = Store.getById("currentScene");
+  // Initialize canvas and webgl context
+  initScene(renderer, currentScene, Store);
+
+  window.addEventListener("resize", () => {
+    renderer.resizeCanvas();
+  }, false);
+
+  ui.addListener( "SUBMIT_SHADER", (selectedScene, selectedShader) => {
+    if (sessionStorage && `textarea-${selectedShader}` in sessionStorage) {
+      const currShaders = Store.getById("shaders");
+      currShaders[selectedScene][selectedShader].fragment = sessionStorage[`textarea-${selectedShader}`];
+      Store.setDataById("shaders", currShaders);
+    }
+    if (selectedScene === "2D") {
+      const currentShader = Store.getById("currentShader");
+      currentShader["2D"] = selectedShader;
+      Store.setDataById("currentShader", currentShader);
+    }
+    initScene(renderer, selectedScene, Store);
+  });
+
+  ui.addListener("SELECT_SCENE", selected => {
+    initScene(renderer, selected, Store);
+  })
+
+  ui.addListener("UPDATE_MODEL", () => {
+    initScene(renderer, "3D", Store);
+  })
+  
+  const animate = () => {
+    requestAnimationFrame(animate);
+    renderer.render();
+  }
+  animate();
 }
 
 export {
     create3DScene,
-    createFullScreenSquad
+    createFullScreenSquad,
+    render
 };

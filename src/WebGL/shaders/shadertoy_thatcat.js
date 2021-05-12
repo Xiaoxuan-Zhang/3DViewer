@@ -28,6 +28,7 @@ in vec3 v_normal;
 in vec4 v_fragPos;
 out vec4 fragColor;
 
+//#define TIME mod(iTime,10000.0)
 #define PI 3.1416
 #define TERRAIN_PATTERN 4.0*sin(12.0*pos.x)+sin(20.0*pos.y)+sin(15.0*pos.z)
 #define SPEED aTime*0.3
@@ -40,8 +41,10 @@ out vec4 fragColor;
 #define TERRAIN_COLOR vec3(0.07,0.04,0.03)
 #define RIM_COLOR vec3(0.85,0.1,0.1)
 #define RIM_POWER 0.15
-#define AA_SIZE 1
+#define AA_SIZE 0
+
 #define iTime u_time
+#define iMouse u_mouse
 #define iResolution u_resolution
 
 float hash1(vec2 p)
@@ -91,23 +94,11 @@ float sdStick(vec3 p, vec3 a, vec3 b, float r1, float r2) // approximated
 	return length( pa - ba*h ) - r;
 }
 
-float sdTorus( vec3 p, vec2 t )
-{
-  vec2 q = vec2(length(p.xz)-t.x,p.y);
-  return length(q)-t.y;
-}
-
 //http://iquilezles.org/www/articles/smin/smin.htm
 float smin(in float a, in float b, in float k)
 {
     float h = max( k - abs(a-b), 0.0);
     return min(a,b) - h*h*0.25/k;
-}
-
-float smax(in float a, in float b, in float k)
-{
-    float h = max( k - abs(a-b), 0.0);
-    return max(a,b) + h*h*0.25/k;
 }
 
 vec4 sdUnion(vec4 d1, vec4 d2)
@@ -289,8 +280,8 @@ vec4 castRay(in vec3 ro, in vec3 rd, in float aTime)
 vec3 render(in vec2 fragCoord, in float aTime)
 {
     vec2 p = (2.0*fragCoord.xy - iResolution.xy)/iResolution.y;
-    vec2 mouse = u_mouse;
-    float angle = 10.0*u_mouse.x+1.0;
+    vec2 mouse = iMouse.xy;
+    float angle = 10.0*iMouse.x+1.0;
     
     vec3 ta = vec3(0.0,0.45,0.8+SPEED);
     vec3 ro = ta+vec3( 1.0*cos(angle), mouse.y, 1.0*sin(angle) );;
@@ -303,7 +294,7 @@ vec3 render(in vec2 fragCoord, in float aTime)
     vec3 rd = normalize(p.x * uu + p.y * vv + 2.0*ww);
     vec3 sunDir = SUN_DIRECTION;//normalize( vec3(0.8,0.4,0.9) );
     
-    vec3 col = SKY_COLOR - 0.8*rd.y;
+    vec3 col = SKY_COLOR;
     
     vec2 uv = rd.xz/rd.y; //sky dome( intersect the top )
     float sinV = 1.0*(sin(1.0*uv.x )+sin(1.0*uv.y))
@@ -381,10 +372,12 @@ vec3 render(in vec2 fragCoord, in float aTime)
     return col;
 }
 
-void main() {
+void main()
+{
     vec3 col = vec3(0.0);
     vec2 off = vec2(0.0);
-    vec3 noise = texture(u_sample, v_texCoord).rgb;
+    vec2 fragCoord = gl_FragCoord.xy;
+    float md = texture(u_sample, fragCoord).x;
     
 #if AA_SIZE>1
     //anti aliasing & motion blur
@@ -393,8 +386,6 @@ void main() {
         for (float aaX = 0.0; aaX < float(AA_SIZE); ++aaX)
         {
             off = -0.5+vec2(aaY,aaX)/float(AA_SIZE);
-            
-            float md = noise.x;
             float mb = (aaY*float(AA_SIZE)+aaX)/(float(AA_SIZE*AA_SIZE-1));
             mb += (md-0.5)/float(AA_SIZE*AA_SIZE);
             float aTime = iTime - mb*0.5*(1.0/24.0); //1 frame in 24fps for film
@@ -402,7 +393,7 @@ void main() {
             float aTime = iTime;
 #endif
             
-            col += render(v_fragPos.xy+off, aTime);
+            col += render(fragCoord+off, aTime);
             
 #if AA_SIZE>1
         }
@@ -413,9 +404,9 @@ void main() {
     //gamma
     col = pow( col, vec3(0.4546));
     // vignetting        
-    vec2 q = v_fragPos.xy;
+    vec2 q = v_texCoord;
     col *= 0.5 + 0.5*pow(16.0*q.x*q.y*(1.0-q.x)*(1.0-q.y),0.25);
-    fragColor = vec4(col,0.0);
+    fragColor = vec4(col, 1.0);
 }
 `;
 

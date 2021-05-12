@@ -53,9 +53,9 @@ const UIComponent = store => {
   })
 
   modelOptions.querySelector("#selector-scene").addEventListener("change", e => {
-    const selected = document.getElementById("selector-scene").value;
+    const selected = getSelectedOption("selector-scene");
     // Toggle on model loader if 3d is selected
-    toggleModelLoader(selected === "3d" ? true : false);
+    toggleModelLoader(selected);
     // Toggle corresponding shader tab
     toggleShaderTab(selected);
     listeners["SELECT_SCENE"].forEach(func => func(selected));
@@ -78,11 +78,9 @@ const UIComponent = store => {
   }
 };
 
-const toggleModelLoader = (enabled) => {
-  const ele = document.getElementById("model-loader");
-  if (ele) {
-    ele.style.display = enabled ? "block" : "none";
-  }
+const getSelectedOption = id => {
+  const ele = document.getElementById(id);
+  return ele.options[ele.selectedIndex].text;
 }
 
 const createModelLoader = (store) => {
@@ -148,9 +146,10 @@ const updateObjToStore = (store, key, fileObj) => {
 }
 
 const createModelEditor = (store) => {
+  const { currentScene } = store.get();
   const modelEditorDiv = document.createElement("div");
   modelEditorDiv.setAttribute("id", "model-editor");
-  const sceneSelector = new Dropdown("scene", "Select a scene", ["3D", "2D"]);
+  const sceneSelector = new Dropdown("scene", "Select a scene", ["3D", "2D"], currentScene);
   modelEditorDiv.appendChild(sceneSelector.getElement());
   const divider = document.createElement("div");
   divider.className = "divider";
@@ -165,15 +164,24 @@ const createModelEditor = (store) => {
   return modelEditorDiv;
 }
 
+const toggleModelLoader = (type) => {
+  const enabled = type === "2D" ? false : true;
+  const ele = document.getElementById("model-loader");
+  if (ele) {
+    ele.style.display = enabled ? "block" : "none";
+  }
+}
+
 const toggleShaderTab = (type) => {
+  const enabled3D = type === "3D"? "block" : "none";
   const div2d = document.getElementById("editor-2d");
   const div3d = document.getElementById("editor-3d");
-  div2d.style.display = type === "2d"? "block" : "none";
-  div3d.style.display = type === "3d"? "block" : "none";
+  div2d.style.display = !enabled3D;
+  div3d.style.display = enabled3D;
 }
 
 const createShaderEditor = (store) => {
-  const { shaders, currentShader } = store.get();
+  const { shaders, currentShader, currentScene } = store.get();
   const shaderEditorDiv = document.createElement("div");
   shaderEditorDiv.setAttribute("id", "shader-editor-wrapper");
   // Add wrappers for different shader types in order to respond to 3D/2D scene
@@ -192,8 +200,8 @@ const createShaderEditor = (store) => {
     })
     const tabs = new Tabs(`shader-editor-${typeLower}`, items, current);
     wrapper.appendChild(tabs.getElement());
-    if (typeLower === "2d") {
-      // Hide 2d wrapper by default
+    if (type !== currentScene) {
+      // Hide 2d/3d wrapper by default
       wrapper.style.display = "none"
     }
     shaderEditorDiv.appendChild(wrapper);

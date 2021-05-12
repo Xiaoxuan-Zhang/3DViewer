@@ -1,10 +1,6 @@
-import WebGLRenderer from 'src/WebGL/renderer.js';
-import UI from 'src/GUI/UI.js';
 import './style/style.scss';
 import Store from "src/store.js";
-import { create3DScene, createFullScreenSquad } from "src/app.js";
-
-const CANVAS_ID = "webgl-canvas";
+import { render } from "src/app.js";
 
 const load = () => {
   
@@ -55,58 +51,6 @@ const load = () => {
   
   return true;
 };
-
-const render = () => {
-  const renderer = new WebGLRenderer(CANVAS_ID);
-  const ui = UI(Store);
-  // Initialize canvas and webgl context
-  const { scene, camera } = create3DScene(Store);
-  renderer.init(scene, camera);
-
-  window.addEventListener("resize", () => {
-    renderer.resizeCanvas();
-  }, false);
-
-  ui.addListener( "SUBMIT_SHADER", (selectedScene, selectedShader) => {
-    if (sessionStorage && `textarea-${selectedShader}` in sessionStorage) {
-      const currShaders = Store.getById("shaders");
-      currShaders[selectedScene][selectedShader].fragment = sessionStorage[`textarea-${selectedShader}`];
-      Store.setDataById("shaders", currShaders);
-    }
-    if (selectedScene === "3D") {
-      const { scene, camera } = create3DScene(Store);
-      renderer.init(scene, camera);
-    } else {
-      const currentShader = Store.getById("currentShader");
-      currentShader["2D"] = selectedShader;
-      Store.setDataById("currentShader", currentShader);
-      const { scene, camera } = createFullScreenSquad(Store);
-      renderer.init(scene, camera);
-    }
-    
-  });
-
-  ui.addListener("SELECT_SCENE", option => {
-    if (option === "2d") {
-      const { scene, camera } = createFullScreenSquad(Store);
-      renderer.init(scene, camera);
-    } else {
-      const { scene, camera } = create3DScene(Store);
-      renderer.init(scene, camera);
-    }
-  })
-
-  ui.addListener("UPDATE_MODEL", () => {
-    const { scene, camera } = create3DScene(Store);
-    renderer.init(scene, camera);
-  })
-
-  const animate = () => {
-    requestAnimationFrame(animate);
-    renderer.render();
-  }
-  animate();
-}
 
 window.onload = load();
 

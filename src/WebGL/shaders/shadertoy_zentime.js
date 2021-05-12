@@ -27,7 +27,7 @@ var fragment = `#version 300 es
     in vec2 v_texCoord;
     in vec3 v_normal;
     in vec4 v_fragPos;
-    out vec4 outColor;
+    out vec4 fragColor;
 
     const float TURBULENCE = 0.04;
     //noise function from iq: https://www.shadertoy.com/view/Msf3WH
@@ -94,7 +94,9 @@ var fragment = `#version 300 es
 
     void main() {
         vec2 uv = v_texCoord;
-        vec2 p = v_fragPos.xy;
+        vec2 p = gl_FragCoord.xy/u_resolution;
+        p -= 0.5;
+        p.x *= u_resolution.x / u_resolution.y;
 
         vec3 col = vec3(0.0);    
         vec3 smoke = smokeEffect(p);
@@ -116,7 +118,7 @@ var fragment = `#version 300 es
         col = mix(mountCol, col, mountain2);
         
         col *= 0.2 + 0.8 * pow(32.0 * uv.x * uv.y * (1.0 - uv.x) * (1.0 - uv.y), 0.2);
-        outColor = vec4(col ,1.0);
+        fragColor = vec4(col ,1.0);
     }
 `;
   
