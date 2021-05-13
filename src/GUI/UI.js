@@ -112,6 +112,11 @@ const createModelLoader = (store) => {
     li.appendChild(fileLoaders.getElement())
     ul.appendChild(li);
   })
+  const submitBtn = document.createElement("a");
+  submitBtn.id = "model-editor-submit";
+  submitBtn.className = "f7 link dim br1 ph3 pv2 mb2 mt2 dib white bg-dark-green cursor-pointer";
+  submitBtn.innerText = "Update";
+  loaderDiv.appendChild(submitBtn);
   return loaderDiv;
 }
 
@@ -146,7 +151,7 @@ const updateObjToStore = (store, key, fileObj) => {
 }
 
 const createModelEditor = (store) => {
-  const { currentScene } = store.get();
+  const currentScene = store.getById("currentScene");
   const modelEditorDiv = document.createElement("div");
   modelEditorDiv.setAttribute("id", "model-editor");
   const sceneSelector = new Dropdown("scene", "Select a scene", ["3D", "2D"], currentScene);
@@ -155,12 +160,11 @@ const createModelEditor = (store) => {
   divider.className = "divider";
   modelEditorDiv.appendChild(divider);
   const modelLoader = createModelLoader(store);
+  if (currentScene === "2D") {
+    modelLoader.style.display = "none";
+  }
   modelEditorDiv.appendChild(modelLoader);
-  const submitBtn = document.createElement("a");
-  submitBtn.id = "model-editor-submit";
-  submitBtn.className = "f7 link dim br1 ph3 pv2 mb2 mt2 dib white bg-dark-green cursor-pointer";
-  submitBtn.innerText = "Update";
-  modelEditorDiv.appendChild(submitBtn);
+  
   return modelEditorDiv;
 }
 

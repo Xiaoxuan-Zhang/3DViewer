@@ -105,7 +105,15 @@ const appData = {
 }
 const appStore = {
   get: () => Object.assign({}, appData),
-  getById: id => Object.assign({}, appData[id]),
+  getById: id => {
+    if (Array.isArray(appData[id])) {
+      return [...appData[id]];
+    } else if (typeof appData[id] === "object") {
+      return Object.assign({}, appData[id]);
+    } else {
+      return appData[id];
+    }
+  },
   setDataById: (id, newData) => {
     appData[id] = Object.assign({}, {...appData[id], ...newData});
   }

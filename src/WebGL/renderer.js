@@ -82,6 +82,7 @@ class Renderer {
       gl.canvas.width  = displayWidth;
       gl.canvas.height = displayHeight;
     }
+    //console.log(gl.drawingBufferWidth, gl.drawingBufferHeight);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     if (this.camera) {
       this.camera.updateProjectionMatrix();
@@ -130,6 +131,7 @@ class Renderer {
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
       this._renderObject(this.final);
     }
+
   }
 
   _initWebGLContext() {
