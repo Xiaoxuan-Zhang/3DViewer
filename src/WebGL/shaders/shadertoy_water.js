@@ -1,20 +1,4 @@
-var vertex =
-`#version 300 es
-  precision mediump float;
-  in vec4 a_position;
-  in vec2 a_texCoord;
-  in vec3 a_normal;
-  out vec2 v_texCoord;
-  out vec3 v_normal;
-  out vec4 v_fragPos;
-
-  void main(){
-    gl_Position = a_position;
-    v_texCoord = a_texCoord;
-    v_normal = a_normal;
-    v_fragPos = a_position;
-  }
-`;
+import vertex from "src/WebGL/shaders/shadertoy_vertex.js";
 
 var fragment = `#version 300 es
     precision mediump float;
@@ -341,9 +325,9 @@ var fragment = `#version 300 es
         vec2 uv = fragCoord.xy/iResolution.xy;
         uv -= 0.5; // translate to the center of the screen
         uv.x *= iResolution.x / iResolution.y; // restore aspect ratio
-        vec2 mouse = iMouse.xy;
+        vec2 mouse = iMouse.xy/iResolution.xy;
         mouse.y -= 0.5;
-    
+        
         //define camera
         float t = iTime * 0.1;
         vec3 ro = vec3(0.0, 0.0, 0.0);

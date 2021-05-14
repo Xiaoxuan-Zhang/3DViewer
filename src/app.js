@@ -5,6 +5,7 @@ import Scene from "src/WebGL/scene.js";
 import Camera from "src/WebGL/camera.js";
 import Material from "src/WebGL/material.js";
 import Texture from "src/WebGL/texture.js";
+import Cubemap from "src/WebGL/cubemap.js";
 import SimpleLight from "src/WebGL/simpleLight.js";
 import Cube from "src/WebGL/geometries/cube.js";
 import Square from "src/WebGL/geometries/square.js";
@@ -169,7 +170,7 @@ const createFullScreenSquad = store => {
     //  Add square
     const geo = new Square();
     const storeData = store.get();
-    const { textures, images } = storeData;
+    const { textures, images, cubemaps, cubemapTextures } = storeData;
     const uniforms = {
       u_time: {type: "t"},
       u_mouse: {type: "mouse"},
@@ -177,10 +178,20 @@ const createFullScreenSquad = store => {
     };
     const currentShader = storeData.currentShader["2D"];
     const shader = storeData.shaders["2D"][currentShader];
-    textures[currentShader].forEach( (item, i) => {
-      let idx = i === 0 ? "" : i;
-      uniforms[`u_sample${idx}`] = {type: "texture", value: new Texture(images[item].img)};
-    })
+    // Set 2D texture
+    if (currentShader in textures) {
+      textures[currentShader].forEach( (item, i) => {
+        let idx = i === 0 ? "" : i;
+        uniforms[`u_sample${idx}`] = {type: "texture", value: new Texture(images[item].img)};
+      })
+    }
+    // Set cubemap texture
+    if (currentShader in cubemapTextures) {
+      cubemapTextures[currentShader].forEach( (item, i) => {
+        let idx = i === 0 ? "" : i;
+        uniforms[`u_cubemap${idx}`] = {type: "cubemap", value: new Cubemap(cubemaps[item])};
+      })
+    }
     const material = new Material({uniforms, shaders: shader});
     geo.addMaterial(material);
     scene.addGeometry(geo);

@@ -235,6 +235,7 @@ class Renderer {
     deltaMouse[0] = x - this.lastMouse[0];
     deltaMouse[1] = y - this.lastMouse[1];
     this.lastMouse = [x, y];
+    this.mousePos = [ev.clientX, rect.height - ev.clientY];
     this.camera.rotateWithMouse(deltaMouse[0], deltaMouse[1]);
   }
 
@@ -275,24 +276,29 @@ class Renderer {
   _createTextures() {
     this.scene.geometries.forEach( geo => {
       const uniforms = geo.material.uniforms;
-      for (let key in uniforms) {
-        const {type, value} = uniforms[key];
-        if (type === "texture" && value && typeof value === "object") {
-          const {image, properties: {minParam, magParam, wrapSParam, wrapTParam}} = value;
-          value["textureObj"] = WebGLFunc.create2DTexture(this.gl, image, this.gl[minParam], this.gl[magParam], this.gl[wrapSParam], this.gl[wrapTParam]);
-        }
-      }
+      this._assignTextureObj(uniforms);
     });
     
     if (this.scene.skybox) {
       const skybox = this.scene.skybox;
       const uniforms = skybox.material.uniforms;
-      for (let key in uniforms) {
-        const {type, value} = uniforms[key];
-        if (type === "texture" && value && typeof value === "object") {
-          const {image, properties: {minParam, magParam, wrapSParam, wrapTParam}} = value;
-          value["textureObj"] = WebGLFunc.create2DTexture(this.gl, image, this.gl[minParam], this.gl[magParam], this.gl[wrapSParam], this.gl[wrapTParam]);
-        }
+      this._assignTextureObj(uniforms);
+    }
+  }
+
+  _assignTextureObj(uniforms) {
+    for (let key in uniforms) {
+      const {type, value} = uniforms[key];
+      if (!value || typeof value !== "object") {
+        continue;
+      }
+      if (type === "texture") {
+        const {image, properties: {minParam, magParam, wrapSParam, wrapTParam}} = value;
+        value["textureObj"] = WebGLFunc.create2DTexture(this.gl, image, this.gl[minParam], this.gl[magParam], this.gl[wrapSParam], this.gl[wrapTParam]);
+      } else if (type === "cubemap") {
+        // create cubemap texture
+        const {image, properties: {minParam, magParam, wrapSParam, wrapTParam, wrapRParam}} = value;
+        value["textureObj"] = WebGLFunc.createCubemapTexture(this.gl, image, this.gl[minParam], this.gl[magParam], this.gl[wrapSParam], this.gl[wrapTParam], this.gl[wrapRParam]);
       }
     }
   }
@@ -342,7 +348,7 @@ class Renderer {
       } else if (type === "texture") {
         WebGLFunc.send2DTextureToGLSL(this.gl, value["textureObj"], materialObj.getTextureUnit(name), name);
       } else if (type === "cubemap") {
-        WebGLFunc.sendCubemapToGLSL(this.gl, value, materialObj.getTextureUnit(name), name);
+        WebGLFunc.sendCubemapToGLSL(this.gl, value["textureObj"], materialObj.getTextureUnit(name), name);
       } else if (type === "v2") {
         WebGLFunc.sendUniformVec2ToGLSL(this.gl, value, name);
       } else if (type === "v3") {
@@ -352,7 +358,7 @@ class Renderer {
       } else if (type === "mat4") {
         WebGLFunc.sendUniformMat4ToGLSL(this.gl, value, name);
       } else if (type === "mouse") {
-        WebGLFunc.sendUniformVec2ToGLSL(this.gl, this.lastMouse, name);
+        WebGLFunc.sendUniformVec2ToGLSL(this.gl, this.mousePos, name);
       } else if (type === "resolution") {
         const res = [this.gl.canvas.clientWidth, this.gl.canvas.clientHeight];
         WebGLFunc.sendUniformVec2ToGLSL(this.gl, res, name);

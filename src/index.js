@@ -2,46 +2,50 @@ import './style/style.scss';
 import Store from "src/store.js";
 import { render } from "src/app.js";
 
+// Create promises for loading images
+const addImageLoaderPromises = images => {
+  return Object.keys(images).map( key => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.addEventListener('load', () => resolve({img, key}));
+      img.addEventListener('error', (err) => reject(err));
+      img.src = images[key].path;
+    })
+    .then( ({img, key}) => {
+      images[key].img = img;
+      return {img, key};
+    })
+  })
+}
+
 const load = () => {
   
-  // TODO: add an animated loading indicator
+  // TODO: add an animated loading page
   
   // Load local resources
   let promiseList = [];
+  // Load example 3D model textures
   const textures = Store.getById("model").textures;
-  Object.keys(textures).forEach(key => {
-    promiseList.push(
-      new Promise((resolve, reject) => {
-        const img = new Image();
-        img.addEventListener('load', () => resolve({img, key}));
-        img.addEventListener('error', (err) => reject(err));
-        img.src = textures[key].path;
-      }).then( ({img, key}) => {
-        textures[key].img = img;
-      })
-    )
-  });
+  promiseList = promiseList.concat(addImageLoaderPromises(textures));
+  // Load images
   const images = Store.getById("images");
-  Object.keys(images).forEach( key => {
-    promiseList.push(
-      new Promise((resolve, reject) => {
-        const img = new Image();
-        img.addEventListener('load', () => resolve({img, key}));
-        img.addEventListener('error', (err) => reject(err));
-        img.src = images[key].path;
-      })
-      .then( ({img, key}) => {
-        images[key].img = img;
-        
-      })
-    )
+  promiseList = promiseList.concat(addImageLoaderPromises(images));
+  
+  // Load cubemaps
+  const cubemaps = Store.getById("cubemaps");
+  Object.keys(cubemaps).forEach( key => {
+    const cubemapTextures = cubemaps[key];
+    promiseList = promiseList.concat(addImageLoaderPromises(cubemapTextures));
   })
 
+  // Wait for all promises to resolve before rendering
   Promise.all(promiseList)
   .then(() => {
-    const model = Store.getById("model");
-    model.textures = textures;
-    Store.setDataById("model", model);
+    /* 
+      Update the upated values back to store, 
+      even though the store data has already been mutated due to the shallow copy of the object.
+    */
+    Store.setDataById("model", { textures });
     Store.setDataById("images", images);
     render();
   })

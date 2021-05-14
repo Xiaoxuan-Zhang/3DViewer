@@ -101,10 +101,10 @@ export function create2DTexture(gl, image, magParam, minParam, wrapSParam, wrapT
     return null;
   }
   gl.bindTexture(gl.TEXTURE_2D, texture);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, minParam);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, magParam);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrapSParam);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrapTParam);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, minParam || gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, magParam || gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrapSParam || gl.REPEAT);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrapTParam || gl.REPEAT);
   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, image.width, image.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, image);
   
@@ -115,8 +115,7 @@ export function create2DTexture(gl, image, magParam, minParam, wrapSParam, wrapT
  * Creates a WebGl cubemap texture object.
  *
  * @param gl The WebGl context
- * @param imgPath A file path/data url containing the location of the texture image
- * @param imageFormat Image format, such as jpg, png, bmp.
+ * @param images An object containing 6 faces and their corresponding Image objects
  * @param magParam texParameteri for gl.TEXTURE_MAG_FILTER. Can be gl.NEAREST,
  * gl.LINEAR, etc.
  * @param minParam texParameteri for gl.TEXTURE_MIN_FILTER. Can be gl.NEAREST,
@@ -125,59 +124,44 @@ export function create2DTexture(gl, image, magParam, minParam, wrapSParam, wrapT
  * gl. MIRRORED_REPEAT, or gl.CLAMP_TO_EDGE.
  * @param wrapTParam texParameteri for gl.TEXTURE_WRAP_S. Can be gl.REPEAT,
  * gl. MIRRORED_REPEAT, or gl.CLAMP_TO_EDGE.
- * @param callback A callback function which executes with the completed texture
- * object passed as a parameter.
+ * @returns texture 
  */
- export function createCubemapTexture(gl, imgPath, imageFormat, magParam, minParam, wrapParam, callback) {
-  var imageList = [
-    imgPath + '/right.' + imageFormat,
-    imgPath + '/left.' + imageFormat,
-    imgPath + '/top.' + imageFormat,
-    imgPath + '/bottom.' + imageFormat,
-    imgPath + '/front.' + imageFormat,
-    imgPath + '/back.' + imageFormat
-  ];
-
-  var faces = [
-    ["right." + imageFormat, gl.TEXTURE_CUBE_MAP_POSITIVE_X],
-    ["left." + imageFormat, gl.TEXTURE_CUBE_MAP_NEGATIVE_X],
-    ["top." + imageFormat, gl.TEXTURE_CUBE_MAP_POSITIVE_Y],
-    ["bottom." + imageFormat, gl.TEXTURE_CUBE_MAP_NEGATIVE_Y],
-    ["front." + imageFormat, gl.TEXTURE_CUBE_MAP_POSITIVE_Z],
-    ["back." + imageFormat, gl.TEXTURE_CUBE_MAP_NEGATIVE_Z]
+ export function createCubemapTexture(gl, images, magParam, minParam, wrapSParam, wrapTParam, wrapRParam) {
+  if (!images || images.length < 6) return null;
+  // Define faces
+  const faces = [
+    ["right", gl.TEXTURE_CUBE_MAP_POSITIVE_X],
+    ["left", gl.TEXTURE_CUBE_MAP_NEGATIVE_X],
+    ["top", gl.TEXTURE_CUBE_MAP_POSITIVE_Y],
+    ["bottom", gl.TEXTURE_CUBE_MAP_NEGATIVE_Y],
+    ["front", gl.TEXTURE_CUBE_MAP_POSITIVE_Z],
+    ["back", gl.TEXTURE_CUBE_MAP_NEGATIVE_Z]
   ];
 
   let texture = gl.createTexture();   // Create a texture object
   if (!texture) {
     console.log('Failed to create the texture object');
-    return false;
+    return null;
   }
+
+  gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
   for (var i = 0; i < faces.length; ++i) {
-    let face = faces[i][1];
-    let imageObj = new Image();  // Create the image object
+    let face = faces[i][0];
+    let faceId = faces[i][1]
+    let imageObj = images[face].img;  // Create the image object
     if (!imageObj) {
       console.log('Failed to create the image object');
-      return false;
+      break;
     }
-    imageObj.customData = {texId: texture, imageId: i, faceId: face,
-                          minFilter: minParam, magFilter: magParam,
-                          wrap: wrapParam};
-    // Register the event handler to be called on loading an image
-    imageObj.onload = function(){
-      gl.bindTexture(gl.TEXTURE_CUBE_MAP, this.customData.texId);
-      gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE);
-      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
-      gl.texImage2D(this.customData.faceId, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, imageObj);
-      //gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
-      callback(this.customData.texId);
-    };
-    // Tell the browser to load an image
-    imageObj.src = imgPath + '/' + faces[i][0];
+    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, minParam || gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, magParam || gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, wrapSParam || gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, wrapTParam || gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_R, wrapRParam || gl.CLAMP_TO_EDGE);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
+    gl.texImage2D(faceId, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, imageObj);
   }
+  return texture;
 }
 
 export function createNullTexture(gl, width, height, internalFormat, format, border, dataType, magParam, minParam, wrapSParam, wrapTParam) {

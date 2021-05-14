@@ -1,25 +1,8 @@
-var vertex =
-`#version 300 es
-  precision mediump float;
-  in vec4 a_position;
-  in vec2 a_texCoord;
-  in vec3 a_normal;
-  out vec2 v_texCoord;
-  out vec3 v_normal;
-  out vec4 v_fragPos;
-
-  void main(){
-    gl_Position = a_position;
-    v_texCoord = a_texCoord;
-    v_normal = a_normal;
-    v_fragPos = a_position;
-  }
-`;
+import vertex from "src/WebGL/shaders/shadertoy_vertex.js";
 
 var fragment = `#version 300 es
     precision mediump float;
 
-    uniform sampler2D u_sample;
     uniform vec2 u_mouse;
     uniform float u_time;
     uniform vec2 u_resolution;
@@ -100,7 +83,6 @@ var fragment = `#version 300 es
 
         vec3 col = vec3(0.0);    
         vec3 smoke = smokeEffect(p);
-        vec3 tex = texture(u_sample, uv).rgb;
         
         vec3 background = 0.7 * vec3(238.0,232.0,170.0)/255.0;
         vec3 mountCol = mix(vec3(102.0,153.0,153.0)/255.0, vec3(153.0,204.0,0.0)/255.0, p.y + 0.5);
