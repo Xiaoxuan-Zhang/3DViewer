@@ -2,7 +2,7 @@ import basicLightShader from 'src/WebGL/shaders/basicLight.js';
 import finalPassShader from "src/WebGL/shaders/finalPass.js";
 import skyShader from 'src/WebGL/shaders/sky.js';
 import simpleShader from "src/WebGL/shaders/simpleColor.js";
-import fullScreenShader from "src/WebGL/shaders/fullscreen.js";
+import blankShader from "src/WebGL/shaders/blank.js";
 import zenTimeShader from "src/WebGL/shaders/shadertoy_zentime.js";
 import thatCatShader from "src/WebGL/shaders/shadertoy_thatcat.js";
 import nowhereShader from "src/WebGL/shaders/shadertoy_nowhere.js";
@@ -48,7 +48,7 @@ const appData = {
         "Sky": skyShader
       },
       "2D": {
-        "FullScreen": fullScreenShader,
+        "Blank": blankShader,
         "ZenTime": zenTimeShader,
         "ThatCat": thatCatShader,
         "Nowhere": nowhereShader,
@@ -66,7 +66,7 @@ const appData = {
       }
     },
     textures: {
-      "FullScreen": ["noise64"],
+      "Blank": ["stone"],
       "ThatCat": ["noise64"],
       "Nowhere": ["noise64"],
       "Mushroom": ["noise64", "stone"],
@@ -81,7 +81,7 @@ const appData = {
       "Glow": ["forest"]
     },
     currentShader: {
-      "2D": "Set",
+      "2D": "ZenTime",
       "3D": "BasicLight"
     },
     currentScene: "2D",

@@ -16,7 +16,9 @@ const UIComponent = store => {
   let listeners = {
     "SUBMIT_SHADER": [],
     "SELECT_SCENE": [],
-    "UPDATE_MODEL": []
+    "UPDATE_MODEL": [],
+    "SELECT_SHADER_2D": [],
+    "SELECT_SHADER_3D": []
   };
   let rootElement = document.createElement("div");
   rootElement.setAttribute("id", "ui-root");
@@ -52,6 +54,16 @@ const UIComponent = store => {
     });
   })
 
+  shaderOptions.querySelector("#selector-shader-editor-2d").addEventListener("change", e => {
+    const selectedShader = getSelectedOption("selector-shader-editor-2d");
+    listeners["SELECT_SHADER_2D"].forEach(func => func(selectedShader));
+  });
+
+  shaderOptions.querySelector("#selector-shader-editor-3d").addEventListener("change", e => {
+    const selectedShader = getSelectedOption("selector-shader-editor-3d");
+    listeners["SELECT_SHADER_3D"].forEach(func => func(selectedShader));
+  });
+
   modelOptions.querySelector("#selector-scene").addEventListener("change", e => {
     const selected = getSelectedOption("selector-scene");
     // Toggle on model loader if 3d is selected
@@ -59,7 +71,7 @@ const UIComponent = store => {
     // Toggle corresponding shader tab
     toggleShaderTab(selected);
     listeners["SELECT_SCENE"].forEach(func => func(selected));
-  })
+  });
 
   modelOptions.querySelector("#model-editor-submit").addEventListener("click", e => {
     listeners["UPDATE_MODEL"].forEach(func => func());

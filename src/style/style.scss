@@ -56,3 +56,15 @@ textarea {
 .cursor-pointer {
   cursor: pointer
 }
+
+@media screen and (max-width: 600px) {
+  .side-bar-right {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    max-height: 40%;
+    height: initial;
+    right: inherit;
+    top: inherit;
+  }
+}

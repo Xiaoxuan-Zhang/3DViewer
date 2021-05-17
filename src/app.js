@@ -225,11 +225,6 @@ const render = () => {
       currShaders[selectedScene][selectedShader].fragment = sessionStorage[`textarea-${selectedShader}`];
       Store.setDataById("shaders", currShaders);
     }
-    if (selectedScene === "2D") {
-      const currentShader = Store.getById("currentShader");
-      currentShader["2D"] = selectedShader;
-      Store.setDataById("currentShader", currentShader);
-    }
     initScene(renderer, selectedScene, Store);
   });
 
@@ -239,6 +234,18 @@ const render = () => {
 
   ui.addListener("UPDATE_MODEL", () => {
     initScene(renderer, "3D", Store);
+  })
+
+  ui.addListener("SELECT_SHADER_2D", (selectedShader) => {
+    const currentShader = Store.getById("currentShader");
+    currentShader["2D"] = selectedShader;
+    Store.setDataById("currentShader", currentShader);
+  })
+
+  ui.addListener("SELECT_SHADER_3D", (selectedShader) => {
+    const currentShader = Store.getById("currentShader");
+    currentShader["3D"] = selectedShader;
+    Store.setDataById("currentShader", currentShader);
   })
   
   const animate = () => {
