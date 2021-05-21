@@ -1,7 +1,8 @@
-import basicLightShader from 'src/WebGL/shaders/basicLight.js';
+//import basicLightShader from 'src/WebGL/shaders/basicLight.js';
 import finalPassShader from "src/WebGL/shaders/finalPass.js";
 import skyShader from 'src/WebGL/shaders/sky.js';
 import simpleShader from "src/WebGL/shaders/simpleColor.js";
+import pbrShader from "src/WebGL/shaders/pbr.js";
 import blankShader from "src/WebGL/shaders/blank.js";
 import zenTimeShader from "src/WebGL/shaders/shadertoy_zentime.js";
 import thatCatShader from "src/WebGL/shaders/shadertoy_thatcat.js";
@@ -21,10 +22,17 @@ import noise64 from "src/external/textures/noise64.png";
 import noise256 from "src/external/textures/noise256.png";
 import stone from "src/external/textures/cobble.png";
 import wood from "src/external/textures/wood.png";
-import catDiffuse from "src/external/models/Cat-1/Cat_D.png";
-import catNormal from "src/external/models/Cat-1/Cat_N.png";
-import catSpecular from "src/external/models/Cat-1/Cat_S.png";
-import catModel from "src/external/models/Cat-1/Cat.obj";
+import caseModel from "src/external/models/chemodan/suitcase.obj";
+import caseAO from "src/external/models/chemodan/textures/ao.jpg";
+import caseColor from "src/external/models/chemodan/textures/color.jpg";
+import caseMetal from "src/external/models/chemodan/textures/metallic.jpg";
+import caseRough from "src/external/models/chemodan/textures/roughness.jpg";
+import caseNormal from "src/external/models/chemodan/textures/normal.jpg";
+import cupModel from "src/external/models/coffee_cup/coffee_cup_obj.obj";
+import cupColor from "src/external/models/coffee_cup/textures/Base_color.png";
+import cupNormal from "src/external/models/coffee_cup/textures/normal.png";
+import cupRough from "src/external/models/coffee_cup/textures/roughness.png";
+import cupMetal from "src/external/models/coffee_cup/textures/metallic.png";
 import buildingFace0 from "src/external/cubemap_building/face0.png";
 import buildingFace1 from "src/external/cubemap_building/face1.png";
 import buildingFace2 from "src/external/cubemap_building/face2.png";
@@ -42,10 +50,11 @@ const appData = {
     // Shaders
     shaders: {
       "3D": {
-        "BasicLight": basicLightShader,
+        //"BasicLight": basicLightShader,
         "FinalPass":  finalPassShader,
         "SimpleColor": simpleShader,
-        "Sky": skyShader
+        "Sky": skyShader,
+        "PBR": pbrShader
       },
       "2D": {
         "Blank": blankShader,
@@ -82,29 +91,80 @@ const appData = {
     },
     currentShader: {
       "2D": "ZenTime",
-      "3D": "BasicLight"
+      "3D": "PBR"
     },
-    currentScene: "2D",
+    currentScene: "3D",
+    currentModel: "case",
     model: {
-      "modelType": "custom",
-      "model": catModel,
-      "textures": {
-        "diffuseMap": {
-          path: catDiffuse,
-          img: null,
-          desc: "Diffuse Map"
+      "case": {
+        "modelType": "custom",
+        "model": caseModel,
+        "transform": {
+          "translate": [0.0, -2.0, -5.0],
+          "scale": [0.1, 0.1, 0.1]
         },
-        "normalMap": {
-          path: catNormal,
-          img: null,
-          desc: "Normal Map"
+        "textures": {
+          "normal": {
+            path: caseNormal,
+            img: null,
+            desc: "Normal Map"
+          },
+          "color": {
+            path: caseColor,
+            img: null,
+            desc: "Color"
+          },
+          "metallic": {
+            path: caseMetal,
+            img: null,
+            desc: "Metallic"
+          },
+          "roughness": {
+            path: caseRough,
+            img: null,
+            desc: "Roughness"
+          },
+          "ao": {
+            path: caseAO,
+            img: null,
+            desc: "AmbientOcclusion"
+          },
+          "emission": {
+            path: null,
+            img: null,
+            desc: "Emission"
+          }
         },
-        "specularMap": {
-          path: catSpecular,
-          img: null,
-          desc: "Specular Map"
-        }
       },
+      "cup": {
+        "modelType": "custom",
+        "model": cupModel,
+        "transform": {
+          "translate": [0.0, -0.5, -2.0]
+        },
+        "textures": {
+          "normal": {
+            path: cupNormal,
+            img: null,
+            desc: "Normal Map"
+          },
+          "color": {
+            path: cupColor,
+            img: null,
+            desc: "Color"
+          },
+          "metallic": {
+            path: cupMetal,
+            img: null,
+            desc: "Metallic"
+          },
+          "roughness": {
+            path: cupRough,
+            img: null,
+            desc: "Roughness"
+          }
+        }
+      }
     },
     images: {
       "noise64": {

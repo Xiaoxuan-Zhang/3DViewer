@@ -76,15 +76,10 @@ const _createSkybox = (data) => {
     return geo;
 }
   
-const _createObject = (data, {
-    translate=[0.0, 0.0, 0.0], 
-    scale=[1.0, 1.0, 1.0], 
-    rotateDegree=0.0, 
-    rotateAxis=[0,1,0], 
-    autoRotate=false
-}) => {
-    const { model, shaders } = data;
-    if (!model.model) return null;
+const _createObject = (data) => {
+    const { model, shaders, currentModel } = data;
+    const defaultModel = model[currentModel];
+    if (!defaultModel.model) return null;
     // Create new obj mesh here 
     /* 
       let meshObj = model.model;
@@ -94,29 +89,31 @@ const _createObject = (data, {
       }
       const geo = new CustomObject(meshObj);
     */
-    const geo = new CustomObject(model.model);
+   
+    const geo = new CustomObject(defaultModel.model);
+    const transform = defaultModel["transform"];
+    const translate = transform["translate"] || [0.0, 0.0, 0.0];
+    const scale = transform["scale"] || [1.0, 1.0, 1.0]; 
+    const rotateDegree = transform["rotateDegree"] || 0.0; 
+    const rotateAxis = transform["rotateAxis"] || [0, 1, 0];
+    const autoRotate = transform["autoRotate"] || false;
     geo.translate(translate);
-    geo.rotate(rotateDegree, rotateAxis);
     geo.scale(scale);
+    geo.rotate(rotateDegree, rotateAxis);
     geo.autoRotate = autoRotate;
     const uniforms = {
       u_model: {type: "mat4", value: geo.modelMatrix},
       u_normalMatrix: {type: "mat4", value: geo.normalMatrix}
     };
-    const maps = model.textures;
-    Object.keys(maps).forEach( key => {
-      const { img } = maps[key];
-      let uniformKey = "u_sample";
-      if (key === "specularMap") {
-        uniformKey = "u_specular";
-      } else if (key === "normalMap") {
-        uniformKey = "u_normal";
-      } else {
-        uniformKey = "u_sample"
+    const maps = defaultModel.textures;
+    
+    Object.keys(maps).forEach(key => {
+      const img = maps[key].img;
+      if ( img ) {
+        uniforms[`u_${key}`] = {type: "texture", value: new Texture(maps[key].img)};
       }
-      uniforms[uniformKey] = {type: "texture", value: new Texture(img)};
     })
-    const material = new Material({uniforms, shaders: shaders["3D"]["BasicLight"]});
+    const material = new Material({uniforms, shaders: shaders["3D"]["PBR"]});
     geo.addMaterial(material);
     return geo;
 }
@@ -127,12 +124,11 @@ const create3DScene = (store) => {
     camera.setPerspective(40.0, 2, 0.1, 100);
     camera.setPosition([0.0, 0.0, 1.0]);
     const storeData = store.get();
-    const { model, modelType } = storeData["model"];
-    if (modelType === "custom") {
-      const customObj = _createObject(storeData, {
-        modelData: model,
-        translate: [0.0, -1.0, -2.0]
-      });
+    const { model, currentModel } = storeData;
+    const newModel = model[currentModel];
+    
+    if (newModel.modelType === "custom") {
+      const customObj = _createObject(storeData);
       scene.addGeometry(customObj);
     } else {
       //  Add some 3D stuff

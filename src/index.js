@@ -5,6 +5,8 @@ import { render } from "src/app.js";
 // Create promises for loading images
 const addImageLoaderPromises = images => {
   return Object.keys(images).map( key => {
+    const imgPath = images[key].path;
+    if (!imgPath) return null;
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.addEventListener('load', () => resolve({img, key}));
@@ -18,15 +20,23 @@ const addImageLoaderPromises = images => {
   })
 }
 
-const load = () => {
+const loadContent = () => {
   
   // TODO: add an animated loading page
   
   // Load local resources
   let promiseList = [];
+  const models = Store.getById("model");
+  // console.log(models);
+  // const objMesh = load(models["cup"].model, [OBJLoader]);
+
   // Load example 3D model textures
-  const textures = Store.getById("model").textures;
-  promiseList = promiseList.concat(addImageLoaderPromises(textures));
+  Object.keys(models).forEach( key => {
+    const model = models[key];
+    const textures = model.textures;
+    promiseList = promiseList.concat(addImageLoaderPromises(textures));
+  })
+
   // Load images
   const images = Store.getById("images");
   promiseList = promiseList.concat(addImageLoaderPromises(images));
@@ -45,7 +55,7 @@ const load = () => {
       Update the upated values back to store, 
       even though the store data has already been mutated due to the shallow copy of the object.
     */
-    Store.setDataById("model", { textures });
+    Store.setDataById("model", models);
     Store.setDataById("images", images);
     render();
   })
@@ -56,7 +66,7 @@ const load = () => {
   return true;
 };
 
-window.onload = load();
+window.onload = loadContent();
 
 
 

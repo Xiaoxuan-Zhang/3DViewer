@@ -1,7 +1,7 @@
 import UIComponent from "src/GUI/Components/UIComponent.js";
 
 class FileUploader extends UIComponent {
-    constructor(id, title, accept="*") {
+    constructor(id, title, accept="*", filename="") {
         super();
         const element = document.createElement("div");
         element.id = id;
@@ -19,6 +19,8 @@ class FileUploader extends UIComponent {
         `;
         const fileName = document.createElement("span");
         fileName.id = "filename";
+        fileName.className = "f7";
+        fileName.innerText = filename;
         element.appendChild(fileName);
         this.id = id;
         this.element = element;

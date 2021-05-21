@@ -95,34 +95,46 @@ const getSelectedOption = id => {
   return ele.options[ele.selectedIndex].text;
 }
 
+const addToList = (parent, child) => {
+  const li = document.createElement("li");
+  li.className = "lh-copy pv1 ba bl-0 bt-0 br-0 b--dotted b--white-30";
+  li.appendChild(child);
+  parent.appendChild(li);
+  return li;
+}
+
+const getImageName = (imgObj) => {
+  let name = "";
+  if (imgObj) {
+    const src = imgObj.src;
+    name = src.substring(src.lastIndexOf("/") + 1)
+  }
+  return name;
+}
+
 const createModelLoader = (store) => {
   const loaderDiv = document.createElement("div");
   loaderDiv.id = "model-loader";
-  const loaders = {
-    "model": "3D Model", 
-    "normal": "Normal Map", 
-    "diffuse": "Diffuse Map", 
-    "specular": "Specular Map"
-  };
   const ul = document.createElement("ul");
   ul.className = "list pl0 measure center mt1 mb1";
   loaderDiv.appendChild(ul);
-  Object.keys(loaders).forEach( key => {
-    const accept = key === "model" ? ".obj" : "image/*";
-    const fileLoaders = new FileLoader(key, loaders[key], accept);
+  // Create model loader
+  // const modelLoader = new FileLoader("model", "3D Model", ".obj");
+  // modelLoader.bindEvent(null, "change", file => {
+  //   processObj(store, "model", file, updateObjToStore);
+  // });
+  // addToList(ul, modelLoader.getElement());
+
+  // Create texture loaders
+  const { currentModel, model } = store.get();
+  const { textures } = model[currentModel];
+  Object.keys(textures).forEach( key => {
+    const texture = textures[key];
+    const fileLoaders = new FileLoader(key, texture.desc, "image/*", getImageName(texture.img));
     fileLoaders.bindEvent(null, "change", file => {
-      if (key === "model") {
-        //Process model
-        processObj(store, key, file, updateObjToStore);
-      } else {
-        //
-        processImage(store, key, file, updateTextureToStore);
-      }
+      processImage(store, key, file, updateTextureToStore);
     })
-    const li = document.createElement("li");
-    li.className = "lh-copy pv1 ba bl-0 bt-0 br-0 b--dotted b--white-30";
-    li.appendChild(fileLoaders.getElement())
-    ul.appendChild(li);
+    addToList(ul, fileLoaders.getElement());
   })
   const submitBtn = document.createElement("a");
   submitBtn.id = "model-editor-submit";
@@ -152,13 +164,15 @@ const processObj = (store, key, file, objHandler) => {
 
 const updateTextureToStore = (store, key, fileObj) => {
   const model = store.getById("model");
-  model.textures[`${key}Map`].img = fileObj;
+  const currentModel = store.getById("currentModel");
+  model[currentModel].textures[key].img = fileObj;
   store.setDataById("model", model);
 }
 
 const updateObjToStore = (store, key, fileObj) => {
   const model = store.getById("model");
-  model[key] = fileObj;
+  const currentModel = store.getById("currentModel");
+  model[currentModel][key] = fileObj;
   store.setDataById("model", model);
 }
 
@@ -189,11 +203,11 @@ const toggleModelLoader = (type) => {
 }
 
 const toggleShaderTab = (type) => {
-  const enabled3D = type === "3D"? "block" : "none";
+  const enabled3D = type === "3D";
   const div2d = document.getElementById("editor-2d");
   const div3d = document.getElementById("editor-3d");
-  div2d.style.display = !enabled3D;
-  div3d.style.display = enabled3D;
+  div2d.style.display = !enabled3D? "block" : "none";
+  div3d.style.display = enabled3D? "block" : "none";
 }
 
 const createShaderEditor = (store) => {
