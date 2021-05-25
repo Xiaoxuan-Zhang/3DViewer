@@ -2,6 +2,15 @@ import './style/style.scss';
 import Store from "src/store.js";
 import { render } from "src/app.js";
 
+const addModelLoaderPromise = model => {
+  return fetch(model.path)
+    .then(response => response.text())
+    .then(text => {
+      model.text = text;
+      return text;
+    })
+}
+
 // Create promises for loading images
 const addImageLoaderPromises = images => {
   return Object.keys(images).map( key => {
@@ -27,14 +36,13 @@ const loadContent = () => {
   // Load local resources
   let promiseList = [];
   const models = Store.getById("model");
-  // console.log(models);
-  // const objMesh = load(models["cup"].model, [OBJLoader]);
 
   // Load example 3D model textures
   Object.keys(models).forEach( key => {
     const model = models[key];
     const textures = model.textures;
     promiseList = promiseList.concat(addImageLoaderPromises(textures));
+    promiseList.push(addModelLoaderPromise(model));
   })
 
   // Load images
@@ -47,7 +55,7 @@ const loadContent = () => {
     const cubemapTextures = cubemaps[key];
     promiseList = promiseList.concat(addImageLoaderPromises(cubemapTextures));
   })
-
+ 
   // Wait for all promises to resolve before rendering
   Promise.all(promiseList)
   .then(() => {

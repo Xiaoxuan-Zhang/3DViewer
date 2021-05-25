@@ -12,13 +12,13 @@
      * @constructor
      */
     constructor({
-      position=new Float32Array([0.0, 10.0, 5.0]), 
-      color=new Float32Array([1.0, 1.0, 1.0]), 
-      specularColor=new Float32Array([1.0, 1.0, 1.0])
+      position, 
+      color, 
+      specularColor
     }) {
-      this.position = position;
-      this.color = color;
-      this.specularColor = specularColor;
+      this.position = new Float32Array(position || [0.0, 10.0, 5.0]);
+      this.color = new Float32Array(color || [1.0, 1.0, 1.0]);
+      this.specularColor = new Float32Array(specularColor || [1.0, 1.0, 1.0]);
     }
 
     setPosition(pos) {

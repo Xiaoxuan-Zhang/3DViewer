@@ -12,17 +12,27 @@ uniform sampler2D u_normal;
 in vec4 a_position;
 in vec3 a_normal;
 in vec2 a_texCoord;
+in vec3 a_tangent;
 
-out vec2 v_texCoord;
-out vec3 v_normal;
+out vec2 v_texCoord; 
+out vec3 v_normal; 
 out vec3 v_fragPos;
+out vec3 v_tangentLightPos;
+out vec3 v_tangentCameraPos;
+out vec3 v_tangentFragPos; 
 
 void main(){
   gl_Position = u_projection * u_view * u_model * a_position;
-  vec3 texNor = texture(u_normal, v_texCoord).rgb;
+  vec3 T = normalize(vec3(u_model * vec4(a_tangent, 0.0)));
+  vec3 N = normalize(vec3(u_model * vec4(a_normal, 0.0)));
+  vec3 B = cross(N, T);
   v_normal = mat3(u_normalMatrix) * a_normal; //Transform to world space
   v_fragPos = vec3(u_model * a_position); //Transform to world space
   v_texCoord = a_texCoord;
+  mat3 TBN = transpose(mat3(T, B, N));
+  v_tangentLightPos = TBN * u_lightPos;
+  v_tangentCameraPos = TBN * u_cameraPos;
+  v_tangentFragPos = TBN * v_fragPos;
 }
 `;
 
@@ -43,6 +53,10 @@ uniform sampler2D u_normal;
 in vec3 v_normal;
 in vec3 v_fragPos;
 in vec2 v_texCoord;
+in vec3 v_tangentLightPos;
+in vec3 v_tangentCameraPos;
+in vec3 v_tangentFragPos; 
+
 out vec4 outColor;
 
 #define PI 3.1415926
@@ -77,16 +91,18 @@ float geometrySmith(float NdotV, float NdotL, float roughness) {
     return ggx1 * ggx2;
 }
 
-vec3 calcLight(vec3 N, vec3 V, vec3 albedo) {
+// v, l are not normalized
+vec3 calcLight(vec3 N, vec3 v, vec3 l, vec3 albedo) {
     vec3 Lo = vec3(0.0);
     vec3 F0 = vec3(0.04);
+    
     float metallic = texture(u_metallic, v_texCoord).r;
     float roughness = texture(u_roughness, v_texCoord).r;
     F0 = mix(F0, albedo, metallic);
     vec3 light = vec3(150.0, 150.0, 120.0);
     //for (int i = 0; i < 4; ++i) 
-    {
-        vec3 l = u_lightPos - v_fragPos;
+    {   
+        vec3 V = normalize(v);
         vec3 L = normalize(l);
         vec3 H = normalize(V + L);
         float cosTheta = max(dot(H, V), 0.0);
@@ -112,19 +128,24 @@ vec3 calcLight(vec3 N, vec3 V, vec3 albedo) {
 }
 
 void main(){
-  vec3 N = normalize(v_normal);
-  vec3 V = normalize(u_cameraPos - v_fragPos);
-  vec3 albedo = pow(texture(u_color, v_texCoord).rgb, vec3(2.2));
-  vec3 emission = texture(u_emission, v_texCoord).rgb;
-  vec3 ao = texture(u_ao, v_texCoord).rgb;
-  vec3 Lo = calcLight(N, V, albedo);
-  vec3 ambient = vec3(0.03) * albedo * ao;
-  vec3 col = Lo + ambient;
-  // HDR tonemapping
-  col = col / (col + vec3(1.0));
-  // gamma correct
-  col = pow(col, vec3(1.0/2.2)); 
-  outColor = vec4(col, 1.0);
+    vec3 N = 2.0 * texture(u_normal, v_texCoord).rgb - 1.0;
+    vec3 viewPos = v_tangentCameraPos;
+    vec3 fragPos = v_tangentFragPos;
+    vec3 lightPos = v_tangentLightPos;
+    vec3 viewDir = viewPos - fragPos;
+    vec3 lightDir = lightPos - fragPos;
+
+    vec3 albedo = pow(texture(u_color, v_texCoord).rgb, vec3(2.2));
+    vec3 emission = texture(u_emission, v_texCoord).rgb;
+    vec3 ao = texture(u_ao, v_texCoord).rgb;
+    vec3 Lo = calcLight(N, viewDir, lightDir, albedo);
+    vec3 ambient = vec3(0.03) * albedo * ao;
+    vec3 col = Lo + ambient;
+    // HDR tonemapping
+    col = col / (col + vec3(1.0));
+    // gamma correct
+    col = pow(col, vec3(1.0/2.2)); 
+    outColor = vec4(col, 1.0);
 }`;
 
 export default {

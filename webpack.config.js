@@ -55,16 +55,16 @@ module.exports = {
         ]
       },
       {
-        test: /\.(?:ico|gif|png|jpe?g)$/i,
+        test: /\.(?:ico|gif|png|jpe?g|obj)$/i,
         type: "asset/resource",
         generator: {
           filename: '[path][name][ext]'
         }
       },
-      {
-        test: /\.obj$/,
-        loader: 'webpack-obj-loader'
-      }
+      // {
+      //   test: /\.obj$/,
+      //   loader: 'webpack-obj-loader'
+      // }
     ]
   },
   resolve: {

@@ -33,6 +33,9 @@ import cupColor from "src/external/models/coffee_cup/textures/Base_color.png";
 import cupNormal from "src/external/models/coffee_cup/textures/normal.png";
 import cupRough from "src/external/models/coffee_cup/textures/roughness.png";
 import cupMetal from "src/external/models/coffee_cup/textures/metallic.png";
+import cube from "src/external/models/cube.obj";
+import wallColor from "src/external/textures/brickwall.jpg";
+import wallNormal from "src/external/textures/brickwall_normal.jpg";
 import buildingFace0 from "src/external/cubemap_building/face0.png";
 import buildingFace1 from "src/external/cubemap_building/face1.png";
 import buildingFace2 from "src/external/cubemap_building/face2.png";
@@ -93,14 +96,27 @@ const appData = {
       "2D": "ZenTime",
       "3D": "PBR"
     },
+    lightInfo: {
+      position: [-10.0, 10.0, 5.0],
+      color: [1.0, 1.0, 0.97]
+    },
+    cameraInfo: {
+      position: [0.0, 0.0, 10.0],
+      target: [0.0, 0.0, 0.0]
+    },
     currentScene: "3D",
     currentModel: "case",
     model: {
       "case": {
         "modelType": "custom",
+        "path": caseModel, 
         "model": caseModel,
+        "text": "",
         "transform": {
           "translate": [0.0, -2.0, -5.0],
+          "rotateAxis": [0, 1, 0],
+          "rotateDegree": 0,
+          "autoRotate": false,
           "scale": [0.1, 0.1, 0.1]
         },
         "textures": {
@@ -138,9 +154,14 @@ const appData = {
       },
       "cup": {
         "modelType": "custom",
+        "path": cupModel,
         "model": cupModel,
+        "text": "",
         "transform": {
-          "translate": [0.0, -0.5, -2.0]
+          "translate": [0.0, -1.0, -2.0],
+          "rotateAxis": [0, 1, 0],
+          "rotateDegree": 0,
+          "autoRotate": false,
         },
         "textures": {
           "normal": {
@@ -164,6 +185,51 @@ const appData = {
             desc: "Roughness"
           }
         }
+      },
+      "cube": {
+        "modelType": "custom",
+        "path": cube, 
+        "model": cube,
+        "text": "",
+        "transform": {
+          "translate": [0.0, -2.0, -5.0],
+          "rotateAxis": [0, 1, 0],
+          "rotateDegree": 0,
+          "autoRotate": false,
+          "scale": [1.0, 1.0, 1.0]
+        },
+        "textures": {
+          "normal": {
+            path: wallNormal,
+            img: null,
+            desc: "Normal Map"
+          },
+          "color": {
+            path: wallColor,
+            img: null,
+            desc: "Color"
+          },
+          "metallic": {
+            path: cupMetal,
+            img: null,
+            desc: "Metallic"
+          },
+          "roughness": {
+            path: cupRough,
+            img: null,
+            desc: "Roughness"
+          },
+          "ao": {
+            path: null,
+            img: null,
+            desc: "AmbientOcclusion"
+          },
+          "emission": {
+            path: null,
+            img: null,
+            desc: "Emission"
+          }
+        },
       }
     },
     images: {

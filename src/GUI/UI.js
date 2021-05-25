@@ -97,7 +97,7 @@ const getSelectedOption = id => {
 
 const addToList = (parent, child) => {
   const li = document.createElement("li");
-  li.className = "lh-copy pv1 ba bl-0 bt-0 br-0 b--dotted b--white-30";
+  li.className = "pv1 ba bl-0 bt-0 br-0 b--dotted b--white-30";
   li.appendChild(child);
   parent.appendChild(li);
   return li;
@@ -107,7 +107,15 @@ const getImageName = (imgObj) => {
   let name = "";
   if (imgObj) {
     const src = imgObj.src;
-    name = src.substring(src.lastIndexOf("/") + 1)
+    name = getFileName(src);
+  }
+  return name;
+}
+
+const getFileName = (filePath) => {
+  let name = "";
+  if (filePath !== "") {
+    name = filePath.substring(filePath.lastIndexOf("/") + 1)
   }
   return name;
 }
@@ -118,16 +126,17 @@ const createModelLoader = (store) => {
   const ul = document.createElement("ul");
   ul.className = "list pl0 measure center mt1 mb1";
   loaderDiv.appendChild(ul);
+  const { currentModel, model } = store.get();
+  const { path, textures } = model[currentModel];
+
   // Create model loader
-  // const modelLoader = new FileLoader("model", "3D Model", ".obj");
-  // modelLoader.bindEvent(null, "change", file => {
-  //   processObj(store, "model", file, updateObjToStore);
-  // });
-  // addToList(ul, modelLoader.getElement());
+  const modelLoader = new FileLoader("model", "Model(.obj)", ".obj", getFileName(path));
+  modelLoader.bindEvent(null, "change", file => {
+    processObj(store, "text", file, updateObjToStore);
+  });
+  addToList(ul, modelLoader.getElement());
 
   // Create texture loaders
-  const { currentModel, model } = store.get();
-  const { textures } = model[currentModel];
   Object.keys(textures).forEach( key => {
     const texture = textures[key];
     const fileLoaders = new FileLoader(key, texture.desc, "image/*", getImageName(texture.img));

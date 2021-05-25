@@ -17,6 +17,7 @@ class Geometry {
     this.normals = []; //the corresponding normals to each vertex
     this.UVs = []; //the corresponding UV to each vertex
     this.indices = [];
+    this.tangents = [];
     this.modelMatrix = new Matrix4(); // Model matrix applied to geometric object
     this.normalMatrix = new Matrix4();
     this.buffer = {};

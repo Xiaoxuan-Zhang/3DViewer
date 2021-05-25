@@ -10,9 +10,9 @@ import {
  * @author "Xiaoxuan Zhang"
  * @this {Camera}
  */
-var Camera = function() {
-  this.position = new Float32Array([0.0, 0.0, 10.0]);
-  this.target = new Float32Array([0.0, 0.0, 0.0]);
+var Camera = function({position, target}) {
+  this.position = new Float32Array(position || [0.0, 0.0, 10.0]);
+  this.target = new Float32Array(target || [0.0, 0.0, 0.0]);
   this.worldUp = new Float32Array([0, 1, 0]);
   this.up = new Float32Array([0, 1, 0]);
   this.front = new Float32Array([0, 0, -1]);
@@ -58,6 +58,11 @@ Camera.prototype.setPerspective = function(fov, aspectRatio, near, far) {
   this.fov = fov;
   this.near = near;
   this.far = far;
+  this.aspectRatio = aspectRatio;
+  this.updateProjectionMatrix();
+}
+
+Camera.prototype.setAspectRatio = function(aspectRatio) {
   this.aspectRatio = aspectRatio;
   this.updateProjectionMatrix();
 }

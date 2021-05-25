@@ -85,9 +85,10 @@ class Renderer {
     //console.log(gl.drawingBufferWidth, gl.drawingBufferHeight);
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     if (this.camera) {
-      this.camera.updateProjectionMatrix();
+      this.camera.setAspectRatio(gl.canvas.clientWidth / gl.canvas.clientHeight);
     }
     this._updateRenderTexture();
+
   }
   
   setMultiPass(enabled) {
@@ -245,9 +246,12 @@ class Renderer {
       geo.setBuffer('Vertices', WebGLFunc.createBufferData(this.gl, new Float32Array(geo.vertices)), 3);
       geo.setBuffer('UVs', WebGLFunc.createBufferData(this.gl, new Float32Array(geo.UVs)), 2);
       geo.setBuffer('Normals', WebGLFunc.createBufferData(this.gl, new Float32Array(geo.normals)), 3);
-
+      
       if (geo.indices.length > 0) {
         geo.setBuffer('Indices', WebGLFunc.createElementArrayBuffer(this.gl, new Uint16Array(geo.indices)), 3);
+      }
+      if (geo.tangents.length > 0) {
+        geo.setBuffer('Tangents', WebGLFunc.createBufferData(this.gl, new Float32Array(geo.tangents)), 3);
       }
     });
 
@@ -325,7 +329,10 @@ class Renderer {
     geo.setBuffer('Vertices', WebGLFunc.createBufferData(this.gl, new Float32Array(geo.vertices)), 3);
     geo.setBuffer('UVs', WebGLFunc.createBufferData(this.gl, new Float32Array(geo.UVs)), 2);
     geo.setBuffer('Normals', WebGLFunc.createBufferData(this.gl, new Float32Array(geo.normals)), 3);
-    
+    if (geo.indices.length > 0) {
+      geo.setBuffer('Indices', 
+        WebGLFunc.createElementArrayBuffer(this.gl, new Float32Array(geo.indices)), 3);
+    }
   }
 
   _sendMaterialUniforms(materialObj) {
@@ -391,7 +398,7 @@ class Renderer {
   }
 
   _renderObject(renderObj) {
-    const { material, vertices, normals, indices, UVs, buffer } = renderObj;
+    const { material, vertices, normals, indices, UVs, buffer, tangents } = renderObj;
     WebGLUtils.useShader(this.gl, material.shaderProgram);
     
     if (vertices.length > 0) {
@@ -402,6 +409,9 @@ class Renderer {
     }
     if (UVs.length > 0) {
       WebGLFunc.sendAttributeBufferToGLSL(this.gl, buffer['UVs'].buffer, buffer['UVs'].dataCount, "a_texCoord");
+    }
+    if (tangents.length > 0) {
+      WebGLFunc.sendAttributeBufferToGLSL(this.gl, buffer['Tangents'].buffer, buffer['Tangents'].dataCount, "a_tangent");
     }
 
     this._sendMaterialUniforms(material);

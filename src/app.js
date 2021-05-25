@@ -10,6 +10,7 @@ import SimpleLight from "src/WebGL/simpleLight.js";
 import Cube from "src/WebGL/geometries/cube.js";
 import Square from "src/WebGL/geometries/square.js";
 import CustomObject from "src/WebGL/geometries/object.js";
+import parseObj from "src/WebGL/lib/objParser";
 
 const CANVAS_ID = "webgl-canvas";
 
@@ -78,20 +79,12 @@ const _createSkybox = (data) => {
   
 const _createObject = (data) => {
     const { model, shaders, currentModel } = data;
-    const defaultModel = model[currentModel];
-    if (!defaultModel.model) return null;
-    // Create new obj mesh here 
-    /* 
-      let meshObj = model.model;
-      if (typeof meshObj === "string") {
-        // Parse text to mesh object
-        meshObj = new Mesh(meshObj);
-      }
-      const geo = new CustomObject(meshObj);
-    */
-   
-    const geo = new CustomObject(defaultModel.model);
-    const transform = defaultModel["transform"];
+    const customModel = model[currentModel];
+    if (!customModel.text) return null;
+    
+    const meshData = parseObj(customModel.text);
+    const geo = new CustomObject(meshData);
+    const transform = customModel["transform"];
     const translate = transform["translate"] || [0.0, 0.0, 0.0];
     const scale = transform["scale"] || [1.0, 1.0, 1.0]; 
     const rotateDegree = transform["rotateDegree"] || 0.0; 
@@ -105,7 +98,7 @@ const _createObject = (data) => {
       u_model: {type: "mat4", value: geo.modelMatrix},
       u_normalMatrix: {type: "mat4", value: geo.normalMatrix}
     };
-    const maps = defaultModel.textures;
+    const maps = customModel.textures;
     
     Object.keys(maps).forEach(key => {
       const img = maps[key].img;
@@ -119,13 +112,15 @@ const _createObject = (data) => {
 }
 
 const create3DScene = (store) => {
+    const storeData = store.get();
+    const { model, currentModel, cameraInfo, lightInfo } = storeData;
+    const newModel = model[currentModel];
+
     const scene = new Scene();
-    const camera = new Camera();
+    const camera = new Camera({...cameraInfo});
     camera.setPerspective(40.0, 2, 0.1, 100);
     camera.setPosition([0.0, 0.0, 1.0]);
-    const storeData = store.get();
-    const { model, currentModel } = storeData;
-    const newModel = model[currentModel];
+    
     
     if (newModel.modelType === "custom") {
       const customObj = _createObject(storeData);
@@ -154,7 +149,7 @@ const create3DScene = (store) => {
     const skybox = _createSkybox(storeData);
     scene.skybox = skybox;
   
-    const light = new SimpleLight({});
+    const light = new SimpleLight({...lightInfo});
     scene.setLight(light);
     return { scene, camera };
 }

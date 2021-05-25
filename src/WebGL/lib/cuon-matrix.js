@@ -696,6 +696,48 @@ Matrix4.prototype.dropShadowDirectionally = function(normX, normY, normZ, planeX
 };
 
 /**
+ * Constructor of Vector2
+ * If opt_src is specified, new vector is initialized by opt_src.
+ * @param opt_src source vector(option)
+ */
+ var Vector2 = function(opt_src) {
+  var v = new Float32Array(2);
+  if (opt_src && typeof opt_src === 'object') {
+    v[0] = opt_src[0]; v[1] = opt_src[1]; 
+  }
+  this.elements = v;
+}
+
+/**
+  * Normalize Vector2.
+  * @return this
+  */
+Vector2.prototype.normalize = function() {
+  var v = this.elements;
+  var c = v[0], d = v[1], g = Math.sqrt(c*c+d*d);
+  if(g) {
+    if(g == 1)
+      return this;
+  } else {
+    v[0] = 0; v[1] = 0; 
+    return this;
+  }
+  g = 1/g;
+  v[0] = c*g; v[1] = d*g; 
+  return this;
+};
+
+/**
+  * Vector2 length.
+  * @return Length of the vector
+  */
+Vector2.prototype.length = function() {
+  var v = this.elements;
+  return Math.sqrt(Math.pow(v[0], 2) + Math.pow(v[1], 2));
+}
+
+
+/**
  * Constructor of Vector3
  * If opt_src is specified, new vector is initialized by opt_src.
  * @param opt_src source vector(option)
@@ -750,8 +792,85 @@ var Vector4 = function(opt_src) {
   this.elements = v;
 }
 
+/**
+ * Vector subtract
+ * @param other source vector
+ */
+var subtract = function(other) {
+  if (other.elements.length != this.elements.length) {
+    return null;
+  }
+  return this.elements.map( (e, i) => e - other.elements[i]);
+}
+
+/**
+ * Vector add
+ * @param other source vector
+ */
+ var add = function(other) {
+  if (other.elements.length != this.elements.length) {
+    return null;
+  }
+  return this.elements.map( (e, i) => e + other.elements[i]);
+}
+
+/**
+ * Vector scalar
+ * @param scalar 
+ */
+ var scale = function(scalar) {
+  let results = this.elements.map( e => e * scalar);
+  return results;
+}
+
+Vector2.prototype.subtract = function(other) {
+  const result = subtract.call(this, other);
+  return new Vector2(result);
+}
+
+Vector3.prototype.subtract = function(other) {
+  const result = subtract.call(this, other);
+  return new Vector3(result);
+}
+
+Vector4.prototype.subtract = function(other) {
+  const result = subtract.call(this, other);
+  return new Vector4(result);
+}
+
+Vector2.prototype.add = function(other) {
+  const result = add.call(this, other);
+  return new Vector2(result);
+}
+
+Vector3.prototype.add = function(other) {
+  const result = add.call(this, other);
+  return new Vector3(result);
+}
+
+Vector4.prototype.add = function(other) {
+  const result = add.call(this, other);
+  return new Vector4(result);
+}
+
+Vector2.prototype.scale = function(other) {
+  const result = scale.call(this, other);
+  return new Vector2(result);
+}
+
+Vector3.prototype.scale = function(other) {
+  const result = scale.call(this, other);
+  return new Vector3(result);
+}
+
+Vector4.prototype.scale = function(other) {
+  const result = scale.call(this, other);
+  return new Vector4(result);
+}
+
 export default Matrix4;
 export {
   Vector4,
-  Vector3
+  Vector3,
+  Vector2
 }
