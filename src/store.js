@@ -110,7 +110,7 @@ const appData = {
       "case": {
         "modelType": "custom",
         "path": caseModel, 
-        "model": caseModel,
+        "model": null,
         "text": "",
         "transform": {
           "translate": [0.0, -2.0, -5.0],
@@ -155,7 +155,7 @@ const appData = {
       "cup": {
         "modelType": "custom",
         "path": cupModel,
-        "model": cupModel,
+        "model": null,
         "text": "",
         "transform": {
           "translate": [0.0, -1.0, -2.0],

@@ -10,7 +10,8 @@ class Material {
    *
    * @constructor
    */
-  constructor({uniforms=null, shaders=null}) {
+  constructor(params = {}) {
+    const { uniforms, shaders } = params;
     this.uniforms = uniforms;
     this.shaderProgram = null;
     this.shaders = shaders;

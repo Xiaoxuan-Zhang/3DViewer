@@ -10,7 +10,8 @@ import {
  * @author "Xiaoxuan Zhang"
  * @this {Camera}
  */
-var Camera = function({position, target}) {
+var Camera = function(params={}) {
+  const { position, target } = params;
   this.position = new Float32Array(position || [0.0, 0.0, 10.0]);
   this.target = new Float32Array(target || [0.0, 0.0, 0.0]);
   this.worldUp = new Float32Array([0, 1, 0]);

@@ -13,11 +13,12 @@ import Matrix4 from "src/WebGL/lib/cuon-matrix.js";
      *
      * @constructor
      */
-    constructor({
-      position, 
-      color, 
-      specularColor
-    }) {
+    constructor(params={}) {
+      const {
+        position, 
+        color, 
+        specularColor
+      } = params;
       this.position = new Float32Array(position || [0.0, 10.0, 5.0]);
       this.color = new Float32Array(color || [1.0, 1.0, 1.0]);
       this.specularColor = new Float32Array(specularColor || [1.0, 1.0, 1.0]);

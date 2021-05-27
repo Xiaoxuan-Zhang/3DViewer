@@ -81,8 +81,11 @@ const _createObject = (data) => {
     const { model, shaders, currentModel } = data;
     const customModel = model[currentModel];
     if (!customModel.text) return null;
-    
-    const meshData = parseObj(customModel.text);
+    let meshData = customModel.model;
+    if (!meshData) {
+      meshData = parseObj(customModel.text);
+      customModel.model = meshData; // Temporarily mutate the store data
+    }
     const geo = new CustomObject(meshData);
     const transform = customModel["transform"];
     const translate = transform["translate"] || [0.0, 0.0, 0.0];
@@ -120,7 +123,6 @@ const create3DScene = (store) => {
     const camera = new Camera({...cameraInfo});
     camera.setPerspective(40.0, 2, 0.1, 100);
     camera.setPosition([0.0, 0.0, 1.0]);
-    
     
     if (newModel.modelType === "custom") {
       const customObj = _createObject(storeData);
@@ -201,7 +203,7 @@ const initScene = (renderer, sceneType, store) => {
 
 const render = () => {
   const renderer = new WebGLRenderer(CANVAS_ID);
-  const ui = UI(Store);
+  const ui = UI(Store, "ui-wrapper");
   const currentScene = Store.getById("currentScene");
   // Initialize canvas and webgl context
   initScene(renderer, currentScene, Store);
