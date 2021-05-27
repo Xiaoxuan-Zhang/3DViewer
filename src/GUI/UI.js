@@ -83,7 +83,7 @@ const UIComponent = store => {
     }
     listeners[target].push(listener);
   }
-
+ 
   return {
     rootElement,
     addListener

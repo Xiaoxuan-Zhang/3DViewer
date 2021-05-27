@@ -63,6 +63,7 @@ const loadContent = () => {
       Update the upated values back to store, 
       even though the store data has already been mutated due to the shallow copy of the object.
     */
+    document.getElementById("loading-screen").style = "display: none";
     Store.setDataById("model", models);
     Store.setDataById("images", images);
     render();
