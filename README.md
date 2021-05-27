@@ -18,4 +18,6 @@ Run `npm deploy`
 * Fix issues in tangent calculation
 * Rendering a model with transparency
 * Rendering shadows
+* Implement IBL
+* Improve postprocessing
 * Try webassembly for faster calculation
